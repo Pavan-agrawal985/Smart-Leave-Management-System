@@ -10,7 +10,7 @@ try:
     db=mysql.connector.connect(
         host="localhost",
         user="root",
-        password="Kasana@2005",
+        password="Pavan@985",
         database="leave_system",
         auth_plugin='mysql_native_password'
     )

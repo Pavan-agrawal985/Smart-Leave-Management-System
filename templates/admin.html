@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Admin Dashboard</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<div class="container">
+
+  <!-- Sidebar -->
+  <div class="sidebar">
+    <h2>Admin Panel</h2>
+    <ul>
+      <li onclick="showPage('dashboard')">Dashboard</li>
+      <li onclick="showPage('users')">Users</li>
+      <li onclick="showPage('faculty')">Faculty</li>
+      <li onclick="showPage('leaves')">Leaves</li>
+      <li onclick="showPage('reports')">Reports</li>
+      <li onclick="showPage('settings')">Settings</li>
+      <li>Logout</li>
+    </ul>
+  </div>
+
+  <!-- Main Content -->
+  <div class="main">
+
+    <!-- Dashboard -->
+    <div id="dashboard" class="page active">
+      <h1>Dashboard</h1>
+
+      <div class="cards">
+        <div class="card">Users: <span id="usersCount">120</span></div>
+        <div class="card">Faculty: <span id="facultyCount">15</span></div>
+        <div class="card">Leaves: <span id="leaveCount">340</span></div>
+        <div class="card">Pending: <span id="pendingCount">23</span></div>
+      </div>
+    </div>
+
+    <!-- Users Page -->
+    <div id="users" class="page">
+      <h1>User Management</h1>
+      <button onclick="addUser()">Add User</button>
+      <ul id="userList"></ul>
+    </div>
+
+    <!-- Faculty Page -->
+    <div id="faculty" class="page">
+      <h1>Faculty Management</h1>
+      <button onclick="addFaculty()">Add Faculty</button>
+      <ul id="facultyList"></ul>
+    </div>
+
+    <!-- Leaves Page -->
+    <div id="leaves" class="page">
+      <h1>Leave Monitoring</h1>
+
+      <table>
+        <tr>
+          <th>Name</th>
+          <th>Type</th>
+          <th>Dates</th>
+          <th>Status</th>
+        </tr>
+        <tr>
+          <td>Pavan</td>
+          <td>Sick</td>
+          <td>10–12 Mar</td>
+          <td>Pending</td>
+        </tr>
+        <tr>
+          <td>Rohan</td>
+          <td>Casual</td>
+          <td>15–16 Mar</td>
+          <td>Approved</td>
+        </tr>
+      </table>
+    </div>
+
+    <!-- Reports -->
+    <div id="reports" class="page">
+      <h1>Reports</h1>
+      <p>Generate reports here...</p>
+    </div>
+
+    <!-- Settings -->
+    <div id="settings" class="page">
+      <h1>System Settings</h1>
+      <p>Configure leave types and rules...</p>
+    </div>
+
+  </div>
+
+</div>
+
+<script src="script.js"></script>
+</body>
+</html>

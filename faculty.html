@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Faculty Management</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+
+    <!-- Sidebar -->
+    <div class="sidebar">
+        <h2>Admin Panel</h2>
+        <ul>
+            <li onclick="window.location.href='index.html'">Dashboard</li>
+            <li onclick="window.location.href='users.html'">Users</li>
+            <li class="active">Faculty</li>
+            <li onclick="window.location.href='leaves.html'">Leaves</li>
+            <li onclick="window.location.href='reports.html'">Reports</li>
+            <li onclick="window.location.href='settings.html'">Settings</li>
+            <li onclick="window.location.href='login.html'">Logout</li>
+        </ul>
+    </div>
+
+    <!-- Main -->
+    <div class="main">
+
+        <!-- Navbar -->
+        <div class="navbar">
+            <h2>Faculty Management</h2>
+        </div>
+
+        <!-- Add Faculty Form -->
+        <div class="table-container">
+            <h3>Add Faculty</h3>
+
+            <form id="facultyForm">
+                <input type="text" id="name" placeholder="Enter Name" required><br><br>
+                <input type="email" id="email" placeholder="Enter Email" required><br><br>
+
+                <select id="department" required>
+                    <option value="">Select Department</option>
+                    <option>Computer Science</option>
+                    <option>Ece</option>
+                    <option>EE</option>
+                </select><br><br>
+
+                <button type="submit">Add Faculty</button>
+            </form>
+        </div>
+
+        <!-- Faculty Table -->
+        <div class="table-container">
+            <h3>Faculty List</h3>
+
+            <table id="facultyTable">
+                <tr>
+                    <th>Name</th>
+                    <th>Email</th>
+                    <th>Department</th>
+                    <th>Action</th>
+                </tr>
+            </table>
+        </div>
+
+    </div>
+
+    <!-- JS -->
+    <script src="faculty.js"></script>
+
+</body>
+</html>

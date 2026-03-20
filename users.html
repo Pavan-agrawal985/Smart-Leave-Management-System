@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>User Management</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+
+    <!-- Sidebar -->
+    <div class="sidebar">
+        <h2>Admin Panel</h2>
+        <ul>
+            <li onclick="window.location.href='index.html'">Dashboard</li>
+            <li class="active">Users</li>
+            <li onclick="window.location.href='faculty.html'">Faculty</li>
+            <li onclick="window.location.href='leaves.html'">Leaves</li>
+            <li onclick="window.location.href='reports.html'">Reports</li>
+            <li onclick="window.location.href='settings.html'">Settings</li>
+            <li onclick="window.location.href='login.html'">Logout</li>
+        </ul>
+    </div>
+
+    <!-- Main -->
+    <div class="main">
+
+        <!-- Navbar -->
+        <div class="navbar">
+            <h2>User Management</h2>
+        </div>
+
+        <!-- Add User Form -->
+        <div class="table-container">
+            <h3>Add New User</h3>
+
+            <form>
+                <input type="text" placeholder="Enter Name" required><br><br>
+                <input type="email" placeholder="Enter Email" required><br><br>
+                
+                <select required>
+                    <option value="">Select Role</option>
+                    <option>User</option>
+                    <option>Faculty</option>
+                </select><br><br>
+
+                <button type="submit">Add User</button>
+            </form>
+        </div>
+
+        <!-- Users Table -->
+        <div class="table-container">
+            <h3>All Users</h3>
+
+            <table>
+                <tr>
+                    <th>Name</th>
+                    <th>Email</th>
+                    <th>Role</th>
+                    <th>Action</th>
+                </tr>
+
+                <tr>
+                    <td>Rahul</td>
+                    <td>rahul@gmail.com</td>
+                    <td>User</td>
+                    <td>
+                        <button>Edit</button>
+                        <button style="background:red;">Delete</button>
+                    </td>
+                </tr>
+
+                <tr>
+                    <td>Amit</td>
+                    <td>amit@gmail.com</td>
+                    <td>Faculty</td>
+                    <td>
+                        <button>Edit</button>
+                        <button style="background:red;">Delete</button>
+                    </td>
+                </tr>
+            </table>
+        </div>
+
+    </div>
+
+</body>
+</html>

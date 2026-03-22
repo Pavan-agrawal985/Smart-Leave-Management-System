@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Leave Management</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+
+    <!-- Sidebar -->
+    <div class="sidebar">
+        <h2>Admin Panel</h2>
+        <ul>
+            <li><a href="index.html">Dashboard</a></li>
+            <li><a href="users.html">Users</a></li>
+            <li><a href="faculty.html">Faculty</a></li>
+            <li class="active"><a href="leaves.html">Leaves</a></li>
+            <li><a href="reports.html">Reports</a></li>
+            <li><a href="settings.html">Settings</a></li>
+            <li><a href="login.html">Logout</a></li>
+        </ul>
+    </div>
+
+    <!-- Main -->
+    <div class="main">
+
+        <!-- Navbar -->
+        <div class="navbar">
+            <h2>Leave Management</h2>
+        </div>
+
+        <!-- Leave Table -->
+        <div class="table-container">
+            <h3>All Leave Requests</h3>
+
+            <table id="leaveTable">
+                <tr>
+                    <th>Name</th>
+                    <th>Type</th>
+                    <th>From</th>
+                    <th>To</th>
+                    <th>Reason</th>
+                    <th>Status</th>
+                    <th>Action</th>
+                </tr>
+
+                <!-- Sample Data -->
+                <tr>
+                    <td>Rahul</td>
+                    <td>Sick</td>
+                    <td>12 Mar</td>
+                    <td>14 Mar</td>
+                    <td>Fever</td>
+                    <td>Pending</td>
+                    <td>
+                        <button class="approve">Approve</button>
+                        <button class="reject">Reject</button>
+                    </td>
+                </tr>
+
+                <tr>
+                    <td>Amit</td>
+                    <td>Casual</td>
+                    <td>15 Mar</td>
+                    <td>16 Mar</td>
+                    <td>Personal Work</td>
+                    <td>Approved</td>
+                    <td>-</td>
+                </tr>
+
+            </table>
+        </div>
+
+    </div>
+
+    <!-- JS -->
+    <script src="leaves.js"></script>
+
+</body>
+</html>

@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Leave History</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background: #f4f7fb;
+            padding: 30px;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            background: white;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+            border-radius: 12px;
+            overflow: hidden;
+        }
+        th, td {
+            padding: 14px;
+            border-bottom: 1px solid #e2e8f0;
+            text-align: center;
+        }
+        th {
+            background: #1e293b;
+            color: white;
+        }
+    </style>
+</head>
+<body>
+    <h2>Leave History</h2>
+    <table>
+        <tr>
+            <th>Leave ID</th>
+            <th>Type</th>
+            <th>From</th>
+            <th>To</th>
+            <th>Status</th>
+        </tr>
+        {% for leave in leaves %}
+        <tr>
+            <td>{{ leave[0] }}</td>
+            <td>{{ leave[1] }}</td>
+            <td>{{ leave[2] }}</td>
+            <td>{{ leave[3] }}</td>
+            <td>{{ leave[4] }}</td>
+        </tr>
+        {% endfor %}
+    </table>
+</body>
+</html>

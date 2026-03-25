@@ -3,8 +3,6 @@
 <head>
     <meta charset="UTF-8">
     <title>Admin Dashboard</title>
-
-    <!-- CSS -->
     <link rel="stylesheet" href="style.css">
 </head>
 
@@ -14,54 +12,62 @@
     <div class="sidebar">
         <h2>Admin Panel</h2>
         <ul>
-            <li onclick="showSection('dashboard')">Dashboard</li>
-            <li onclick="showSection('users')">Users</li>
-            <li onclick="showSection('faculty')">Faculty</li>
-            <li onclick="showSection('leaves')">Leaves</li>
-            <li onclick="showSection('reports')">Reports</li>
-            <li onclick="showSection('settings')">Settings</li>
-            <li>Logout</li>
+            <li class="active"><a href="admindashboard.html">Dashboard</a></li>
+            <li><a href="users.html">Users</a></li>
+            <li><a href="faculty.html">Faculty</a></li>
+            <li><a href="leaves.html">Leaves</a></li>
+            <li><a href="reports.html">Reports</a></li>
+            <li><a href="settings.html">Settings</a></li>
+            <li><a href="login.html">Logout</a></li>
         </ul>
     </div>
-
-    <!-- Main -->
+    
+    <!-- Main Content -->
     <div class="main">
 
+        <!-- Navbar -->
         <div class="navbar">
             <h2>Admin Dashboard</h2>
         </div>
 
-        <!-- DASHBOARD -->
-        <div id="dashboard" class="section">
+        <!-- System Overview -->
+        <div class="section">
+            <h3>System Overview</h3>
+
             <div class="cards">
+
                 <div class="card">
                     <h3>Total Users</h3>
-                    <p>120</p>
+                    <p id="userCount">0</p>
                 </div>
 
                 <div class="card">
-                    <h3>Faculty</h3>
-                    <p>35</p>
+                    <h3>Total Faculty</h3>
+                    <p id="facultyCount">0</p>
                 </div>
 
                 <div class="card">
                     <h3>Pending Leaves</h3>
-                    <p>8</p>
+                    <p id="pendingCount">0</p>
                 </div>
 
                 <div class="card">
                     <h3>Approved Leaves</h3>
-                    <p>50</p>
+                    <p id="approvedCount">0</p>
                 </div>
-            </div>
 
+            </div>
+        </div>
+
+        <!-- Leave Activity Monitoring -->
+        <div class="section">
             <div class="table-container">
-                <h3>Recent Leave Requests</h3>
+                <h3>Recent Leave Activity</h3>
 
                 <table>
                     <tr>
-                        <th>Name</th>
-                        <th>Type</th>
+                        <th>User</th>
+                        <th>Leave Type</th>
                         <th>Date</th>
                         <th>Status</th>
                     </tr>
@@ -83,37 +89,9 @@
             </div>
         </div>
 
-        <!-- USERS -->
-        <div id="users" class="section" style="display:none;">
-            <h2>User Management</h2>
-            <button>Add User</button>
-        </div>
-
-        <!-- FACULTY -->
-        <div id="faculty" class="section" style="display:none;">
-            <h2>Faculty Management</h2>
-            <button>Add Faculty</button>
-        </div>
-
-        <!-- LEAVES -->
-        <div id="leaves" class="section" style="display:none;">
-            <h2>Leave Management</h2>
-            <p>All leave requests will appear here</p>
-        </div>
-
-        <!-- REPORTS -->
-        <div id="reports" class="section" style="display:none;">
-            <h2>Reports</h2>
-        </div>
-
-        <!-- SETTINGS -->
-        <div id="settings" class="section" style="display:none;">
-            <h2>Settings</h2>
-        </div>
-
     </div>
 
-    <!-- JS FILE -->
+    <!-- JS -->
     <script src="script.js"></script>
 
 </body>

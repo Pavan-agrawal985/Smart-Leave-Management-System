@@ -50,3 +50,31 @@ function deleteType(index) {
 
     displayLeaveTypes();
 }
+
+// ✅ Leave Policy Logic
+let policyForm = document.getElementById("policyForm");
+
+if (policyForm) {
+    let savedPolicy = JSON.parse(localStorage.getItem("leavePolicy"));
+
+    if (savedPolicy) {
+        document.getElementById("policyDisplay").innerText =
+            `Sick: ${savedPolicy.sick}, Casual: ${savedPolicy.casual}`;
+    }
+
+    policyForm.addEventListener("submit", function(e) {
+        e.preventDefault();
+
+        let sick = document.getElementById("sick").value;
+        let casual = document.getElementById("casual").value;
+
+        let policy = { sick, casual };
+
+        localStorage.setItem("leavePolicy", JSON.stringify(policy));
+
+        document.getElementById("policyDisplay").innerText =
+            `Sick: ${sick}, Casual: ${casual}`;
+
+        alert("Policy Saved!");
+    });
+}

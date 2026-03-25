@@ -60,6 +60,23 @@
             </table>
         </div>
 
+        <!-- ✅ NEW: Leave Policy Section (SRS REQUIRED) -->
+        <div class="table-container">
+            <h3>Leave Policy</h3>
+
+            <form id="policyForm">
+                <label>Max Sick Leaves</label><br>
+                <input type="number" id="sick" placeholder="Enter max sick leaves" required><br><br>
+
+                <label>Max Casual Leaves</label><br>
+                <input type="number" id="casual" placeholder="Enter max casual leaves" required><br><br>
+
+                <button type="submit">Save Policy</button>
+            </form>
+
+            <p id="policyDisplay"></p>
+        </div>
+
     </div>
 
     <!-- JS -->

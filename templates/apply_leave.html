@@ -3,102 +3,72 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>User Dashboard</title>
+    <title>Apply Leave</title>
     <style>
         body {
-            margin: 0;
             font-family: Arial, sans-serif;
             background: #f4f7fb;
-        }
-        .container {
-            display: flex;
-            min-height: 100vh;
-        }
-        .sidebar {
-            width: 240px;
-            background: #1e293b;
-            color: white;
-            padding: 20px;
-        }
-        .sidebar h2 {
-            text-align: center;
-            margin-bottom: 30px;
-        }
-        .sidebar a {
-            display: block;
-            color: white;
-            text-decoration: none;
-            padding: 12px;
-            margin: 10px 0;
-            border-radius: 8px;
-            background: #334155;
-        }
-        .sidebar a:hover {
-            background: #475569;
-        }
-        .main {
-            flex: 1;
+            margin: 0;
             padding: 30px;
         }
-        .cards {
-            display: grid;
-            grid-template-columns: repeat(4, 1fr);
-            gap: 20px;
-            margin-top: 20px;
-        }
-        .card {
+        .form-box {
+            width: 500px;
+            margin: auto;
             background: white;
-            padding: 20px;
+            padding: 30px;
             border-radius: 14px;
             box-shadow: 0 4px 12px rgba(0,0,0,0.08);
-            text-align: center;
         }
-        .card h3 {
-            margin-bottom: 10px;
-            color: #334155;
+        input, select, textarea {
+            width: 100%;
+            padding: 12px;
+            margin-top: 10px;
+            margin-bottom: 20px;
+            border: 1px solid #cbd5e1;
+            border-radius: 8px;
         }
-        .card p {
-            font-size: 28px;
-            font-weight: bold;
-            color: #0f172a;
+        button {
+            width: 100%;
+            background: #2563eb;
+            color: white;
+            padding: 12px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+        }
+        button:hover {
+            background: #1d4ed8;
         }
     </style>
 </head>
 <body>
-<div class="container">
-    <div class="sidebar">
-        <h2>User Panel</h2>
-        <a href="/user/dashboard">Dashboard</a>
-        <a href="/user/apply_leave">Apply Leave</a>
-        <a href="/user/leave_history">Leave History</a>
-        <a href="/user/leave_status">Leave Status</a>
-        <a href="/user/profile">Profile</a>
-        <a href="/logout">Logout</a>
-    </div>
+    <div class="form-box">
+        <h2>Apply Leave</h2>
+        <form method="POST" enctype="multipart/form-data">
 
-    <div class="main">
-        <h1>Welcome {{ user_name }}</h1>
-        <p>Here is your leave summary</p>
+    <label>Leave Type</label>
+    <select name="leave_type" required>
+        <option value="">Select Leave Type</option>
+        <option value="Sick">Sick</option>
+        <option value="Casual">Casual</option>
+        <option value="Emergency">Emergency</option>
+    </select>
 
-        <div class="cards">
-            <div class="card">
-                <h3>Total Leaves</h3>
-                <p>{{ total_leaves }}</p>
-            </div>
-            <div class="card">
-                <h3>Approved</h3>
-                <p>{{ approved_leaves }}</p>
-            </div>
-            <div class="card">
-                <h3>Pending</h3>
-                <p>{{ pending_leaves }}</p>
-            </div>
-            <div class="card">
-                <h3>Rejected</h3>
-                <p>{{ rejected_leaves }}</p>
-            </div>
-        </div>
+    <label>From Date</label>
+    <input type="date" name="from_date" required>
+
+    <label>To Date</label>
+    <input type="date" name="to_date" required>
+
+    <label>Reason</label>
+    <textarea name="reason" rows="4" required></textarea>
+
+    <label>Upload Document (Optional)</label>
+    <input type="file" name="document">
+
+    <button type="submit">Submit Leave Request</button>
+
+</form>
     </div>
-</div>
 </body>
 </html>

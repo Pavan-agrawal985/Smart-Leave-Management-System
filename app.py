@@ -1,8 +1,17 @@
 from flask import Flask, request, render_template, redirect, session, url_for
 import mysql.connector
+import os
+from werkzeug.utils import secure_filename
 
 app = Flask(__name__)
 app.secret_key = "smart_leave_secret_key"
+UPLOAD_FOLDER = 'static/uploads'
+ALLOWED_EXTENSIONS = {'pdf', 'jpg', 'jpeg', 'png', 'doc', 'docx'}
+
+app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
+
+if not os.path.exists(UPLOAD_FOLDER):
+    os.makedirs(UPLOAD_FOLDER)
 
 # MySQL connection
 try:
@@ -10,7 +19,7 @@ try:
     db=mysql.connector.connect(
         host="localhost",
         user="root",
-        password="Pavan@985",
+        password="Kasana@2005",
         database="leave_system",
         auth_plugin='mysql_native_password'
     )
@@ -21,6 +30,9 @@ try:
 
 except Exception as e:
     print("Error:",e)
+def allowed_file(filename):
+    return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
+
 
 #Home
 @app.route('/')
@@ -71,7 +83,7 @@ def login():
             session['user_id'] = user[0]
             session['user_name'] = user[1]
             session['user_email'] = user[2]
-            session['role'] = user[3] if len(user) > 3 else 'Student'
+            session['role'] = user[4] if len(user) > 4 else 'Student'
             return redirect('/user/dashboard')
 
         else:
@@ -111,23 +123,47 @@ def apply_leave():
         return redirect('/login')
 
     if request.method == 'POST':
-        leave_type = request.form['leave_type']
-        from_date = request.form['from_date']
-        to_date = request.form['to_date']
-        reason = request.form['reason']
+        leave_type = request.form.get('leave_type')
+        from_date = request.form.get('from_date')
+        to_date = request.form.get('to_date')
+        reason = request.form.get('reason')
         user_id = session['user_id']
 
+        # basic validation
+        if not leave_type or not from_date or not to_date or not reason:
+            return "All required fields must be filled."
+
+        if from_date > to_date:
+            return "From Date cannot be greater than To Date."
+
+        document_path = None
+
+        # optional document upload
+        if 'document' in request.files:
+            file = request.files['document']
+
+            if file and file.filename != '':
+                if allowed_file(file.filename):
+                    filename = secure_filename(file.filename)
+                    file_path = os.path.join(app.config['UPLOAD_FOLDER'], filename)
+                    file.save(file_path)
+                    document_path = file_path
+                else:
+                    return "Invalid file type. Allowed: pdf, jpg, jpeg, png, doc, docx"
+
         sql = """
-        INSERT INTO leaves (user_id, leave_type, from_date, to_date, reason, status)
-        VALUES (%s, %s, %s, %s, %s, %s)
+        INSERT INTO leaves (user_id, leave_type, from_date, to_date, reason, status, document_path)
+        VALUES (%s, %s, %s, %s, %s, %s, %s)
         """
-        values = (user_id, leave_type, from_date, to_date, reason, 'Pending')
+        values = (user_id, leave_type, from_date, to_date, reason, 'Pending', document_path)
+
         cursor.execute(sql, values)
         db.commit()
 
         return redirect('/user/leave_history')
 
     return render_template('apply_leave.html')
+
 @app.route('/user/leave_history')
 def leave_history():
     if 'user_id' not in session:

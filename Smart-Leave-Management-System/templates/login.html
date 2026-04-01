@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>Login - Leave Management System</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+
+<body>
+
+    <div class="container">
+
+        <h2>Login</h2>
+
+        <form method="POST" action="/login">
+
+            <label>Email</label>
+            <input type="email" placeholder="Enter Email" required>
+
+            <label>Password</label>
+            <input type="password" placeholder="Enter Password" required>
+
+            <button type="submit">Login</button>
+
+            <p>Don't have an account?
+                <a href="register">Register</a>
+            </p>
+
+        </form>
+
+    </div>
+
+</body>
+
+</html>

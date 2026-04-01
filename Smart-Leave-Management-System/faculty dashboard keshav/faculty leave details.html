@@ -1,0 +1,160 @@
+{% extends '_base.html' %}
+{% block title %}Leave Details{% endblock %}
+{% block page_title %}Leave Details{% endblock %}
+{% block page_crumb %}Request #LV-{{ leave.id }}{% endblock %}
+
+{% block content %}
+
+<div style="margin-bottom:14px">
+  <a href="{{ url_for('requests_page') }}" class="btn btn-outline btn-xs">← Back to Requests</a>
+</div>
+
+<div class="two-col" style="align-items:start">
+
+  <!-- LEFT: Leave Info -->
+  <div>
+    <div class="card">
+      <!-- Student Banner -->
+      <div class="detail-banner">
+        <div class="dban-av">{{ leave.student_name[:2].upper() }}</div>
+        <div>
+          <div class="dban-name">{{ leave.student_name }}</div>
+          <div class="dban-meta">{{ leave.department }} · {{ leave.email }}</div>
+        </div>
+        <div style="margin-left:auto">
+          <span class="badge b-{{ leave.status.lower() }}">{{ leave.status }}</span>
+        </div>
+      </div>
+
+      <!-- Leave Info Grid -->
+      <div class="detail-layout" style="padding:0 22px">
+        <div class="detail-row">
+          <div class="detail-lbl">Leave ID</div>
+          <div class="detail-val">
+            <code style="font-family:monospace;font-size:13px;background:#ede9fe;
+              color:#6d28d9;padding:2px 9px;border-radius:5px">LV-{{ leave.id }}</code>
+          </div>
+        </div>
+        <div class="detail-row">
+          <div class="detail-lbl">Leave Type</div>
+          <div class="detail-val">
+            <span class="badge b-{{ leave.leave_type.lower() }}">{{ leave.leave_type }}</span>
+          </div>
+        </div>
+        <div class="detail-row">
+          <div class="detail-lbl">From Date</div>
+          <div class="detail-val">{{ leave.start_date }}</div>
+        </div>
+        <div class="detail-row">
+          <div class="detail-lbl">To Date</div>
+          <div class="detail-val">{{ leave.end_date }}</div>
+        </div>
+        <div class="detail-row">
+          <div class="detail-lbl">Total Days</div>
+          <div class="detail-val"><b>{{ leave.total_days }} day(s)</b></div>
+        </div>
+        <div class="detail-row">
+          <div class="detail-lbl">Applied On</div>
+          <div class="detail-val">{{ leave.created_at.strftime('%d %b %Y, %I:%M %p') if leave.created_at else '—' }}</div>
+        </div>
+      </div>
+
+      <!-- Reason -->
+      <div style="padding:16px 22px;background:#fafafa;border-top:1px solid var(--border)">
+        <div style="font-size:11px;font-weight:700;color:#64748b;text-transform:uppercase;margin-bottom:6px">Reason for Leave</div>
+        <p style="font-size:14px;line-height:1.6">{{ leave.reason }}</p>
+      </div>
+
+      <!-- Document (placeholder) -->
+      <div style="padding:14px 22px;border-top:1px solid var(--border)">
+        <div style="font-size:11px;font-weight:700;color:#64748b;text-transform:uppercase;margin-bottom:8px">Attached Document</div>
+        <div style="background:#f8fafc;border:1.5px dashed #cbd5e1;border-radius:10px;
+          padding:20px;text-align:center;color:#94a3b8;font-size:13px">
+          📄 No document attached
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- RIGHT: Actions + Student Info -->
+  <div>
+    <!-- Action Panel -->
+    {% if leave.status == 'Pending' %}
+    <div class="card" style="margin-bottom:16px">
+      <div class="card-hd"><h3>⚡ Take Action</h3></div>
+      <form method="POST" action="{{ url_for('review_leave') }}" style="padding:18px 20px">
+        <input type="hidden" name="leave_id" value="{{ leave.id }}"/>
+        <input type="hidden" name="decision" id="actionDecision" value=""/>
+        <input type="hidden" name="redirect"  value="details"/>
+        <div class="f-wrap">
+          <label style="font-size:12px;font-weight:700;color:#475569;display:block;margin-bottom:6px">
+            Your Remark / Comment
+            <span style="color:#ef4444;font-weight:400">(required for rejection)</span>
+          </label>
+          <textarea name="remark" rows="4" style="width:100%;border:1.5px solid var(--border);
+            border-radius:10px;padding:10px 12px;font-size:13.5px;
+            font-family:var(--font);outline:none;resize:vertical"
+            placeholder="Add your remark here..."></textarea>
+        </div>
+        <div style="display:flex;gap:10px;margin-top:4px">
+          <button type="submit" class="btn btn-success"
+                  onclick="document.getElementById('actionDecision').value='Approved'">
+            ✅ Approve Leave
+          </button>
+          <button type="submit" class="btn btn-danger"
+                  onclick="document.getElementById('actionDecision').value='Rejected'">
+            ❌ Reject Leave
+          </button>
+        </div>
+        <p style="font-size:11px;color:#94a3b8;margin-top:10px">
+          <code style="font-size:11px;background:#ede9fe;color:#6d28d9;padding:2px 6px;border-radius:4px">POST /faculty/review</code>
+          · Session validated · MySQL UPDATE
+        </p>
+      </form>
+    </div>
+    {% else %}
+    <!-- Already reviewed -->
+    <div class="card" style="margin-bottom:16px;padding:20px">
+      <div class="card-hd"><h3>Review Status</h3></div>
+      <div style="padding:16px 20px">
+        <div style="font-size:13px;font-weight:600;margin-bottom:8px">
+          This request was
+          <span class="badge b-{{ leave.status.lower() }}">{{ leave.status }}</span>
+        </div>
+        {% if leave.faculty_remark %}
+        <div style="background:#f8fafc;border-radius:9px;padding:12px;font-size:13.5px;
+          color:#475569;border-left:3px solid #4facfe;margin-top:10px">
+          "{{ leave.faculty_remark }}"
+        </div>
+        {% endif %}
+      </div>
+    </div>
+    {% endif %}
+
+    <!-- Student Info Card -->
+    <div class="card">
+      <div class="card-hd"><h3>👤 Student Info</h3></div>
+      <div style="padding:14px 20px">
+        <div class="detail-row">
+          <div class="detail-lbl">Full Name</div>
+          <div class="detail-val">{{ leave.student_name }}</div>
+        </div>
+        <div class="detail-row">
+          <div class="detail-lbl">Email</div>
+          <div class="detail-val" style="font-size:13px">{{ leave.email }}</div>
+        </div>
+        <div class="detail-row">
+          <div class="detail-lbl">Department</div>
+          <div class="detail-val">{{ leave.department }}</div>
+        </div>
+        <div class="detail-row">
+          <div class="detail-lbl">Phone</div>
+          <div class="detail-val">{{ leave.phone or 'Not provided' }}</div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+{% endblock %}

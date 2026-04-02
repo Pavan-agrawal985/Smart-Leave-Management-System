@@ -1,4 +1,4 @@
-from flask import Flask, request, render_template, redirect, session, url_for
+from flask import Flask, request, render_template, redirect, session
 import mysql.connector
 
 app = Flask(__name__)

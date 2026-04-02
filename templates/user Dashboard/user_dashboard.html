@@ -34,7 +34,7 @@
         <div class="topbar">
             <h1>Dashboard</h1>
             <div class="user-info">
-                <div class="avatar">{{ user_name[0]|upper }}</div>
+                <div class="avatar">{{ (user_name or 'U')[0]|upper }}</div>
                 <span>{{ user_name }}</span>
             </div>
         </div>

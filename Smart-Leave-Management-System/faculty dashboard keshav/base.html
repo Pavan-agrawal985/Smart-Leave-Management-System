@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>{% block title %}Faculty Dashboard{% endblock %} — SLMS</title>
+<link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}"/>
+{% block head %}{% endblock %}
+</head>
+<body class="dash-body">
+
+<!-- ===== SIDEBAR ===== -->
+<aside class="sidebar">
+  <div class="sb-top">
+    <div class="sb-brand">
+      <div class="sb-logo">SL</div>
+      <div>
+        <div class="sb-bname">SLMS</div>
+        <div class="sb-bver">Faculty Portal</div>
+      </div>
+    </div>
+
+    <div class="jwt-strip">
+      <span class="jwt-dot"></span>
+      Session Active &nbsp;·&nbsp; <b>TEACHER</b>
+    </div>
+
+    <nav class="sb-nav">
+      <div class="nav-section">Main</div>
+
+      <a href="{{ url_for('dashboard') }}"
+         class="nav-link {% if request.endpoint=='dashboard' %}active{% endif %}">
+        <span class="nav-icon">⊞</span>
+        <span>Dashboard</span>
+      </a>
+
+      <a href="{{ url_for('requests_page') }}"
+         class="nav-link {% if request.endpoint=='requests_page' %}active{% endif %}">
+        <span class="nav-icon">📋</span>
+        <span>Leave Requests</span>
+        {% if pending_badge %}
+        <span class="nav-badge">{{ pending_badge }}</span>
+        {% endif %}
+      </a>
+
+      <a href="{{ url_for('approved_page') }}"
+         class="nav-link {% if request.endpoint=='approved_page' %}active{% endif %}">
+        <span class="nav-icon">✅</span>
+        <span>Approved Leaves</span>
+      </a>
+
+      <a href="{{ url_for('rejected_page') }}"
+         class="nav-link {% if request.endpoint=='rejected_page' %}active{% endif %}">
+        <span class="nav-icon">❌</span>
+        <span>Rejected Leaves</span>
+      </a>
+
+      <div class="nav-section">Account</div>
+
+      <a href="{{ url_for('profile_page') }}"
+         class="nav-link {% if request.endpoint=='profile_page' %}active{% endif %}">
+        <span class="nav-icon">👤</span>
+        <span>My Profile</span>
+      </a>
+
+      <a href="{{ url_for('logout') }}" class="nav-link logout">
+        <span class="nav-icon">⏻</span>
+        <span>Logout</span>
+      </a>
+    </nav>
+  </div>
+
+  <div class="sb-footer">
+    <div class="sb-av">
+      {{ session.get('user_name','?')[:2].upper() }}
+    </div>
+    <div>
+      <div class="sb-uname">{{ session.get('user_name','Faculty') }}</div>
+      <div class="sb-udept">{{ session.get('dept','CSE') }} Dept</div>
+    </div>
+  </div>
+</aside>
+
+<!-- ===== MAIN AREA ===== -->
+<main class="main-area">
+
+  <!-- TOPBAR -->
+  <header class="topbar">
+    <div class="tb-left">
+      <h2>{% block page_title %}Dashboard{% endblock %}</h2>
+      <div class="tb-crumb">SLMS / Faculty / {% block page_crumb %}Overview{% endblock %}</div>
+    </div>
+    <div class="tb-right">
+      <div class="tb-search">
+        <span>🔍</span>
+        <input type="text" id="globalSearch" placeholder="Search..."/>
+      </div>
+      <a href="{{ url_for('requests_page') }}" class="tb-bell">🔔</a>
+      <div class="tb-date" id="dateDisp"></div>
+    </div>
+  </header>
+
+  <!-- FLASH MESSAGES -->
+  <div style="padding:0 28px" id="flashWrap">
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% for cat, msg in messages %}
+        <div class="flash-{{ cat }}" style="margin-top:14px">
+          {% if cat=='success' %}✅{% else %}❌{% endif %} {{ msg }}
+        </div>
+      {% endfor %}
+    {% endwith %}
+  </div>
+
+  <!-- PAGE CONTENT -->
+  <div class="page-content">
+    {% block content %}{% endblock %}
+  </div>
+
+</main>
+
+<!-- MODAL (shared) -->
+<div id="reviewModal" class="modal-overlay" style="display:none" onclick="if(event.target===this)closeModal()">
+  <div class="modal-box">
+    <div class="modal-hd">
+      <h3>📋 Leave Request — Review</h3>
+      <button class="modal-x" onclick="closeModal()">✕</button>
+    </div>
+    <div id="mBanner" class="detail-banner"></div>
+    <div id="mInfo"   class="modal-info"></div>
+    <div id="mReason" class="modal-reason"></div>
+    <form method="POST" action="{{ url_for('review_leave') }}">
+      <input type="hidden" name="leave_id"  id="mLeaveId"/>
+      <input type="hidden" name="decision"  id="mDecision"/>
+      <input type="hidden" name="redirect"  value="requests_page"/>
+      <div class="modal-remark">
+        <label>Your Remark
+          <span style="color:#ef4444;font-size:11px">(required for rejection)</span>
+        </label>
+        <textarea name="remark" id="mRemark" rows="3"
+                  placeholder="Add your remark here..."></textarea>
+      </div>
+      <div class="modal-actions">
+        <button type="submit" class="btn btn-success"
+                onclick="document.getElementById('mDecision').value='Approved'">
+          ✅ Approve Leave
+        </button>
+        <button type="submit" class="btn btn-danger"
+                onclick="document.getElementById('mDecision').value='Rejected'">
+          ❌ Reject Leave
+        </button>
+        <button type="button" class="btn btn-outline" onclick="closeModal()">Cancel</button>
+      </div>
+    </form>
+    <div class="modal-api">
+      <code>POST /faculty/review</code> · Flask session validated · RBAC: Faculty only · MySQL UPDATE
+    </div>
+  </div>
+</div>
+
+<div id="toast" class="toast"></div>
+
+<script src="{{ url_for('static', filename='dashboard.js') }}"></script>
+{% block scripts %}{% endblock %}
+</body>
+</html>

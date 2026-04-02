@@ -1,0 +1,371 @@
+{% extends '_base.html' %}
+{% block title %}Leave Requests{% endblock %}
+{% block page_title %}Leave Requests{% endblock %}
+{% block page_crumb %}All Requests{% endblock %}
+
+{% block content %}
+
+<!-- ==========================================
+     FILTER BAR
+========================================== -->
+<form method="GET" action="{{ url_for('requests_page') }}">
+  <div class="card" style="margin-bottom:16px;">
+    <div class="filter-bar">
+
+      <span style="font-size:13px;font-weight:700;color:#475569;">🔽 Filters:</span>
+
+      <!-- Leave Type Filter -->
+      <select class="f-sel" name="type">
+        <option value="all"       {% if ltype == 'all'       %}selected{% endif %}>All Types</option>
+        <option value="Medical"   {% if ltype == 'Medical'   %}selected{% endif %}>Medical</option>
+        <option value="Casual"    {% if ltype == 'Casual'    %}selected{% endif %}>Casual</option>
+        <option value="Emergency" {% if ltype == 'Emergency' %}selected{% endif %}>Emergency</option>
+        <option value="Academic"  {% if ltype == 'Academic'  %}selected{% endif %}>Academic</option>
+      </select>
+
+      <!-- Status Filter -->
+      <select class="f-sel" name="status">
+        <option value="Pending"  {% if status == 'Pending'  %}selected{% endif %}>Pending Only</option>
+        <option value="all"      {% if status == 'all'      %}selected{% endif %}>All Status</option>
+        <option value="Approved" {% if status == 'Approved' %}selected{% endif %}>Approved</option>
+        <option value="Rejected" {% if status == 'Rejected' %}selected{% endif %}>Rejected</option>
+      </select>
+
+      <!-- Department Filter -->
+      <select class="f-sel" name="dept">
+        <option value="all"  {% if dept == 'all'  %}selected{% endif %}>All Depts</option>
+        <option value="CSE"  {% if dept == 'CSE'  %}selected{% endif %}>CSE</option>
+        <option value="ECE"  {% if dept == 'ECE'  %}selected{% endif %}>ECE</option>
+        <option value="MECH" {% if dept == 'MECH' %}selected{% endif %}>MECH</option>
+      </select>
+
+      <!-- Search Box -->
+      <div class="f-search">
+        <span>🔍</span>
+        <input
+          type="text"
+          name="search"
+          value="{{ search | default('') }}"
+          placeholder="Search student name..."
+        />
+      </div>
+
+      <button type="submit" class="btn btn-primary btn-xs">Apply Filter</button>
+      <a href="{{ url_for('requests_page') }}" class="btn btn-outline btn-xs">↺ Reset</a>
+
+    </div>
+  </div>
+</form>
+
+
+<!-- ==========================================
+     LEAVE REQUESTS TABLE
+========================================== -->
+<div class="card">
+  <div class="card-hd">
+    <h3>
+      Leave Requests &nbsp;
+      {% if status == 'Pending' %}
+        <span class="chip amber">{{ leaves | length }} Pending</span>
+      {% elif status == 'Approved' %}
+        <span class="chip green">{{ leaves | length }} Approved</span>
+      {% elif status == 'Rejected' %}
+        <span class="chip red">{{ leaves | length }} Rejected</span>
+      {% else %}
+        <span class="chip">{{ leaves | length }} Records</span>
+      {% endif %}
+    </h3>
+    <div style="font-size:12px;color:#64748b;">
+      Type: <b>{{ ltype if ltype != 'all' else 'All' }}</b> &nbsp;·&nbsp;
+      Status: <b>{{ status if status != 'all' else 'All' }}</b> &nbsp;·&nbsp;
+      Dept: <b>{{ dept if dept != 'all' else 'All' }}</b>
+    </div>
+  </div>
+
+  <div class="tbl-wrap">
+    <table class="tbl">
+      <thead>
+        <tr>
+          <th>Leave ID</th>
+          <th>Student</th>
+          <th>Dept</th>
+          <th>Type</th>
+          <th>From</th>
+          <th>To</th>
+          <th>Days</th>
+          <th>Reason</th>
+          <th>Applied On</th>
+          <th>Status</th>
+          <th>Action</th>
+        </tr>
+      </thead>
+      <tbody>
+
+        {% for r in leaves %}
+        <tr>
+
+          <!-- Leave ID -->
+          <td>
+            <code style="font-family:monospace;font-size:11px;
+              background:#ede9fe;color:#6d28d9;
+              padding:2px 8px;border-radius:4px;">
+              LV-{{ r.id }}
+            </code>
+          </td>
+
+          <!-- Student Name + Email -->
+          <td>
+            <div style="font-weight:700;">{{ r.student_name }}</div>
+            <div style="font-size:11px;color:#64748b;margin-top:2px;">
+              {{ r.email }}
+            </div>
+          </td>
+
+          <!-- Department -->
+          <td>{{ r.department }}</td>
+
+          <!-- Leave Type Badge -->
+          <td>
+            <span class="badge b-{{ r.leave_type | lower }}">
+              {{ r.leave_type }}
+            </span>
+          </td>
+
+          <!-- From Date -->
+          <td>{{ r.start_date }}</td>
+
+          <!-- To Date -->
+          <td>{{ r.end_date }}</td>
+
+          <!-- Total Days -->
+          <td>
+            <b>{{ r.total_days }}</b>
+            <span style="font-size:10px;color:#94a3b8;">day(s)</span>
+          </td>
+
+          <!-- Reason — truncated with full text on hover -->
+          <td style="max-width:150px;overflow:hidden;
+              text-overflow:ellipsis;white-space:nowrap;"
+              title="{{ r.reason }}">
+            {{ r.reason }}
+          </td>
+
+          <!-- Applied On -->
+          <td style="font-size:12px;color:#64748b;">
+            {% if r.created_at %}
+              {{ r.created_at.strftime('%d %b %Y') }}
+            {% else %}
+              —
+            {% endif %}
+          </td>
+
+          <!-- Status Badge -->
+          <td>
+            <span class="badge b-{{ r.status | lower }}">
+              {{ r.status }}
+            </span>
+          </td>
+
+          <!-- Action Buttons -->
+          <td>
+            <div style="display:flex;gap:5px;flex-wrap:wrap;align-items:center;">
+
+              <!-- View Full Details -->
+              <a href="{{ url_for('leave_details', leave_id=r.id) }}"
+                 class="btn btn-xs btn-view"
+                 title="View full leave details">
+                Details
+              </a>
+
+              <!-- FIX: Use data-* attributes instead of inline Jinja in onclick
+                   This eliminates ALL JS parse errors VS Code was reporting -->
+              {% if r.status == 'Pending' %}
+              <button
+                type="button"
+                class="btn btn-xs btn-ok review-btn"
+                title="Approve or Reject this request"
+                data-id="{{ r.id }}"
+                data-name="{{ r.student_name }}"
+                data-type="{{ r.leave_type }}"
+                data-from="{{ r.start_date }}"
+                data-to="{{ r.end_date }}"
+                data-days="{{ r.total_days }}"
+                data-reason="{{ r.reason | e }}"
+                data-dept="{{ r.department }}">
+                ✍ Review
+              </button>
+              {% endif %}
+
+              <!-- Remark tooltip — shown if already reviewed -->
+              {% if r.status != 'Pending' and r.faculty_remark %}
+              <span
+                title="Faculty Remark: {{ r.faculty_remark }}"
+                style="font-size:11px;color:#94a3b8;cursor:help;">
+                💬
+              </span>
+              {% endif %}
+
+            </div>
+          </td>
+
+        </tr>
+        {% else %}
+
+        <!-- Empty State -->
+        <tr>
+          <td colspan="11">
+            <div class="empty-state">
+              <div class="es-icon">📋</div>
+              <div>No leave requests found.</div>
+              <div style="font-size:12px;margin-top:4px;color:#94a3b8;">
+                Try changing the filters above.
+              </div>
+            </div>
+          </td>
+        </tr>
+
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+
+  <!-- Footer: Record count -->
+  {% if leaves %}
+  <div style="padding:10px 20px;background:#f8fafc;
+    border-top:1px solid #e2e8f0;font-size:12px;
+    color:#64748b;text-align:right;">
+    Showing <b>{{ leaves | length }}</b> record(s)
+  </div>
+  {% endif %}
+
+</div><!-- end card -->
+
+{% endblock %}
+
+
+{% block scripts %}
+<script>
+  /* ============================================================
+     Review buttons — read data-* attributes, no inline Jinja.
+     This is what eliminates all VS Code JS linter errors.
+  ============================================================ */
+  document.addEventListener('DOMContentLoaded', function () {
+
+    document.querySelectorAll('.review-btn').forEach(function (btn) {
+      btn.addEventListener('click', function () {
+        openModal(
+          btn.dataset.id,
+          btn.dataset.name,
+          btn.dataset.type,
+          btn.dataset.from,
+          btn.dataset.to,
+          btn.dataset.days,
+          btn.dataset.reason,
+          btn.dataset.dept
+        );
+      });
+    });
+
+  });
+
+
+  /* ============================================================
+     openModal()
+     Fills and opens the Review modal defined in _base.html
+  ============================================================ */
+  function openModal(id, name, type, fromDate, toDate, days, reason, dept) {
+
+    var modal    = document.getElementById('reviewModal');
+    var leaveId  = document.getElementById('mLeaveId');
+    var banner   = document.getElementById('mBanner');
+    var info     = document.getElementById('mInfo');
+    var reasonEl = document.getElementById('mReason');
+    var remark   = document.getElementById('mRemark');
+
+    if (!modal || !leaveId || !banner || !info || !reasonEl) {
+      alert('Error: Modal elements missing. Check #reviewModal in _base.html');
+      return;
+    }
+
+    // Build 2-letter initials from student name
+    var initials = name
+      .trim()
+      .split(' ')
+      .filter(function (w) { return w.length > 0; })
+      .map(function (w) { return w[0].toUpperCase(); })
+      .slice(0, 2)
+      .join('');
+
+    // Set hidden leave_id for form POST
+    leaveId.value = id;
+
+    // Student banner
+    banner.innerHTML =
+      '<div class="dban-av">' + initials + '</div>' +
+      '<div style="flex:1;">' +
+        '<div class="dban-name">' + name + '</div>' +
+        '<div class="dban-meta">' + dept + ' Department &nbsp;·&nbsp; Leave ID: LV-' + id + '</div>' +
+      '</div>' +
+      '<div style="margin-left:auto;">' +
+        '<span class="badge b-pending">⏳ Pending</span>' +
+      '</div>';
+
+    // Leave info grid
+    info.innerHTML =
+      '<div class="mi-row">' +
+        '<div class="mi-lbl">Leave Type</div>' +
+        '<div class="mi-val"><span class="badge b-' + type.toLowerCase() + '">' + type + '</span></div>' +
+      '</div>' +
+      '<div class="mi-row">' +
+        '<div class="mi-lbl">Total Days</div>' +
+        '<div class="mi-val"><b>' + days + ' day(s)</b></div>' +
+      '</div>' +
+      '<div class="mi-row">' +
+        '<div class="mi-lbl">From Date</div>' +
+        '<div class="mi-val">' + fromDate + '</div>' +
+      '</div>' +
+      '<div class="mi-row">' +
+        '<div class="mi-lbl">To Date</div>' +
+        '<div class="mi-val">' + toDate + '</div>' +
+      '</div>';
+
+    // Reason block
+    reasonEl.innerHTML =
+      '<label>Reason for Leave</label>' +
+      '<p>' + reason + '</p>';
+
+    // Clear previous remark
+    if (remark) { remark.value = ''; }
+
+    // Show modal
+    modal.style.display = 'flex';
+  }
+
+
+  /* ============================================================
+     closeModal()
+     Hides modal and clears remark field
+  ============================================================ */
+  function closeModal() {
+    var modal  = document.getElementById('reviewModal');
+    var remark = document.getElementById('mRemark');
+    if (modal)  { modal.style.display = 'none'; }
+    if (remark) { remark.value = ''; }
+  }
+
+
+  // Close on Escape key
+  document.addEventListener('keydown', function (e) {
+    if (e.key === 'Escape') { closeModal(); }
+  });
+
+  // Close on overlay click
+  var reviewModal = document.getElementById('reviewModal');
+  if (reviewModal) {
+    reviewModal.addEventListener('click', function (e) {
+      if (e.target === reviewModal) { closeModal(); }
+    });
+  }
+
+</script>
+{% endblock %}

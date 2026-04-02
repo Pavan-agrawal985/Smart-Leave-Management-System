@@ -1,0 +1,312 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>SLMS — Faculty Dashboard</title>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=Fira+Code:wght@400;500&display=swap" rel="stylesheet"/>
+  <link rel="stylesheet" href="style.css"/>
+</head>
+<body>
+
+<!-- ========== LOGIN ========== -->
+<div id="loginScreen" class="login-screen">
+  <div class="login-bg">
+    <div class="blob b1"></div><div class="blob b2"></div><div class="blob b3"></div>
+  </div>
+  <div class="login-card">
+    <div class="brand-row">
+      <div class="brand-logo">SL</div>
+      <div>
+        <div class="brand-title">SLMS</div>
+        <div class="brand-sub">Smart Leave Management System</div>
+      </div>
+    </div>
+    <div class="role-pill">👨‍🏫 Faculty / Manager Portal</div>
+    <div class="field-group">
+      <label>Email Address</label>
+      <input id="loginEmail" type="email" value="rekha@f.du.ac.in" placeholder="faculty@university.edu"/>
+    </div>
+    <div class="field-group">
+      <label>Password</label>
+      <input id="loginPass" type="password" value="password123" placeholder="••••••••"/>
+    </div>
+    <div class="security-row">
+      <span>🔐 JWT</span><span>🛡 RBAC</span><span>🔒 bcrypt</span><span>🌐 HTTPS/TLS</span>
+    </div>
+    <button class="login-btn" onclick="doLogin()">Sign In as Faculty →</button>
+    <div id="loginErr" style="display:none" class="login-err">❌ Invalid credentials.</div>
+    <p class="login-note">Flask backend · POST /api/login · JWT issued on success</p>
+  </div>
+</div>
+
+<!-- ========== APP SHELL ========== -->
+<div id="appShell" class="app-shell" style="display:none">
+
+  <!-- SIDEBAR -->
+  <aside class="sidebar">
+    <div class="sb-brand">
+      <div class="sb-logo">SL</div>
+      <div class="sb-brand-text">
+        <span class="sb-title">SLMS</span>
+        <span class="sb-ver">v1.0</span>
+      </div>
+    </div>
+    <div class="jwt-strip">
+      <span class="jwt-dot"></span>JWT Active · <b>TEACHER</b>
+    </div>
+    <nav class="sb-nav">
+      <div class="nav-label">Main</div>
+      <a class="nav-link active" onclick="switchPage('dashboard',this)"><span>⊞</span>Dashboard</a>
+      <a class="nav-link" onclick="switchPage('requests',this)">
+        <span>📋</span>Leave Requests
+        <em class="nav-badge" id="pendingBadge">4</em>
+      </a>
+      <a class="nav-link" onclick="switchPage('approved',this)"><span>✅</span>Approved Leaves</a>
+      <a class="nav-link" onclick="switchPage('rejected',this)"><span>❌</span>Rejected Leaves</a>
+      <div class="nav-label">Account</div>
+      <a class="nav-link" onclick="switchPage('profile',this)"><span>👤</span>My Profile</a>
+      <a class="nav-link logout-link" onclick="doLogout()"><span>⏻</span>Logout</a>
+    </nav>
+    <div class="sb-footer">
+      <div class="sb-avatar">MS</div>
+      <div class="sb-user-info">
+        <div class="sb-uname">Ms. Meera Sharma</div>
+        <div class="sb-udept">CSE Department</div>
+      </div>
+    </div>
+  </aside>
+
+  <!-- MAIN -->
+  <main class="main-area">
+    <header class="topbar">
+      <div>
+        <h1 class="page-title" id="pageTitle">Dashboard</h1>
+        <p class="page-crumb">SLMS / Faculty / <span id="pageCrumb">Overview</span></p>
+      </div>
+      <div class="topbar-right">
+        <div class="search-box">
+          <span>🔍</span>
+          <input type="text" id="topSearch" placeholder="Search student, type..." oninput="handleSearch(this.value)"/>
+        </div>
+        <div class="notif-bell" onclick="switchPage('requests',document.querySelector('[onclick*=requests]'))">
+          🔔<span class="notif-dot" id="notifDot">4</span>
+        </div>
+        <div class="date-chip" id="dateChip"></div>
+      </div>
+    </header>
+
+    <!-- PAGE: DASHBOARD -->
+    <section id="page-dashboard" class="page active">
+      <div class="stats-row">
+        <div class="stat-card" style="--sc:#f59e0b;--scl:#fffbeb">
+          <div class="sc-emoji">⏳</div>
+          <div class="sc-data">
+            <div class="sc-num" id="dashPending">4</div>
+            <div class="sc-lbl">Pending Requests</div>
+          </div>
+          <div class="sc-bars">
+            <div style="height:30%"></div><div style="height:60%"></div>
+            <div style="height:45%"></div><div style="height:80%"></div>
+            <div style="height:100%"></div>
+          </div>
+        </div>
+        <div class="stat-card" style="--sc:#10b981;--scl:#ecfdf5">
+          <div class="sc-emoji">✅</div>
+          <div class="sc-data">
+            <div class="sc-num">12</div>
+            <div class="sc-lbl">Approved This Month</div>
+          </div>
+          <div class="sc-bars">
+            <div style="height:50%"></div><div style="height:70%"></div>
+            <div style="height:90%"></div><div style="height:60%"></div>
+            <div style="height:100%"></div>
+          </div>
+        </div>
+        <div class="stat-card" style="--sc:#ef4444;--scl:#fef2f2">
+          <div class="sc-emoji">❌</div>
+          <div class="sc-data">
+            <div class="sc-num">3</div>
+            <div class="sc-lbl">Rejected This Month</div>
+          </div>
+          <div class="sc-bars">
+            <div style="height:80%"></div><div style="height:40%"></div>
+            <div style="height:60%"></div><div style="height:20%"></div>
+            <div style="height:35%"></div>
+          </div>
+        </div>
+        <div class="stat-card" style="--sc:#6366f1;--scl:#eef2ff">
+          <div class="sc-emoji">📅</div>
+          <div class="sc-data">
+            <div class="sc-num">3</div>
+            <div class="sc-lbl">Approved Today</div>
+          </div>
+          <div class="sc-bars">
+            <div style="height:40%"></div><div style="height:55%"></div>
+            <div style="height:70%"></div><div style="height:85%"></div>
+            <div style="height:100%"></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="two-col">
+        <div class="card">
+          <div class="card-hd"><h3>Today's New Requests</h3><span class="chip amber">3 New</span></div>
+          <div id="todayList"></div>
+        </div>
+        <div class="card">
+          <div class="card-hd"><h3>Leave Type Breakdown</h3><span class="chip">This Month</span></div>
+          <div id="breakdownList"></div>
+        </div>
+      </div>
+
+      <div class="card mt16">
+        <div class="card-hd">
+          <h3>⚡ Quick Actions — Pending</h3>
+          <button class="btn-primary sm" onclick="switchPage('requests',document.querySelector('[onclick*=requests]'))">View All →</button>
+        </div>
+        <table class="tbl">
+          <thead><tr><th>Student</th><th>Leave Type</th><th>Dates</th><th>Days</th><th>Reason</th><th>Action</th></tr></thead>
+          <tbody id="quickTbody"></tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- PAGE: LEAVE REQUESTS -->
+    <section id="page-requests" class="page">
+      <div class="card">
+        <div class="card-hd">
+          <h3>All Leave Requests</h3>
+          <div class="filter-wrap">
+            <select class="sel" id="fType" onchange="renderRequests()">
+              <option value="all">All Types</option>
+              <option value="Medical">Medical</option>
+              <option value="Casual">Casual</option>
+              <option value="Emergency">Emergency</option>
+              <option value="Academic">Academic</option>
+            </select>
+            <select class="sel" id="fStatus" onchange="renderRequests()">
+              <option value="Pending">Pending Only</option>
+              <option value="all">All Status</option>
+              <option value="Approved">Approved</option>
+              <option value="Rejected">Rejected</option>
+            </select>
+            <select class="sel" id="fDept" onchange="renderRequests()">
+              <option value="all">All Depts</option>
+              <option value="CSE">CSE</option>
+              <option value="ECE">ECE</option>
+              <option value="EE">EE</option>
+              <option value="MECH">MECH</option>
+            </select>
+          </div>
+        </div>
+        <table class="tbl">
+          <thead>
+            <tr><th>Leave ID</th><th>Student</th><th>Roll No</th><th>Type</th><th>From</th><th>To</th><th>Days</th><th>Reason</th><th>Status</th><th>Action</th></tr>
+          </thead>
+          <tbody id="reqTbody"></tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- PAGE: APPROVED -->
+    <section id="page-approved" class="page">
+      <div class="card">
+        <div class="card-hd"><h3>✅ Approved Leaves</h3><span class="chip green">12 This Month</span></div>
+        <table class="tbl">
+          <thead><tr><th>Leave ID</th><th>Student</th><th>Roll No</th><th>Type</th><th>From</th><th>To</th><th>Days</th><th>Approved On</th><th>Remark</th></tr></thead>
+          <tbody id="appTbody"></tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- PAGE: REJECTED -->
+    <section id="page-rejected" class="page">
+      <div class="card">
+        <div class="card-hd"><h3>❌ Rejected Leaves</h3><span class="chip red">3 This Month</span></div>
+        <table class="tbl">
+          <thead><tr><th>Leave ID</th><th>Student</th><th>Roll No</th><th>Type</th><th>From</th><th>To</th><th>Days</th><th>Rejected On</th><th>Reason</th></tr></thead>
+          <tbody id="rejTbody"></tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- PAGE: PROFILE -->
+    <section id="page-profile" class="page">
+      <div class="profile-layout">
+        <div class="profile-side">
+          <div class="profile-avatar">MS</div>
+          <div class="profile-name">Ms. Meera Sharma</div>
+          <div class="profile-role-badge">Faculty · Manager</div>
+          <div class="profile-dept-text">CSE Department</div>
+          <div class="profile-stats">
+            <div class="ps-box"><div class="ps-val">19</div><div class="ps-key">Reviewed</div></div>
+            <div class="ps-box"><div class="ps-val">12</div><div class="ps-key">Approved</div></div>
+            <div class="ps-box"><div class="ps-val">3</div><div class="ps-key">Rejected</div></div>
+          </div>
+          <div class="profile-info-list">
+            <div class="pil-row"><span>📧</span> <a href="/cdn-cgi/l/email-protection" class="__cf_email__" data-cfemail="cca1a9a9beade2bfa4adbea1ad8cb9a2a5baa9bebfa5b8b5e2a9a8b9">[email&#160;protected]</a></div>
+            <div class="pil-row"><span>📞</span> +91 98765 43210</div>
+            <div class="pil-row"><span>🆔</span> FAC-2019-041</div>
+            <div class="pil-row"><span>🏫</span> CSE, Block-B</div>
+          </div>
+        </div>
+        <div class="profile-main">
+          <div class="card">
+            <div class="card-hd"><h3>Update Profile Details</h3></div>
+            <div class="form-grid">
+              <div class="form-field"><label>Full Name</label><input type="text" id="pfName" value="Ms. Meera Sharma"/></div>
+              <div class="form-field"><label>Employee ID</label><input type="text" value="FAC-2019-041" readonly class="readonly-inp"/></div>
+              <div class="form-field"><label>Email Address</label><input type="email" id="pfEmail" value="meera.sharma@university.edu"/></div>
+              <div class="form-field"><label>Phone Number</label><input type="tel" id="pfPhone" value="+91 98765 43210"/></div>
+              <div class="form-field"><label>Department</label>
+                <select id="pfDept">
+                  <option selected>Computer Science (CSE)</option>
+                  <option>Electronics (ECE)</option>
+                  <option>Mechanical (MECH)</option>
+                </select>
+              </div>
+              <div class="form-field"><label>Designation</label><input type="text" id="pfDesig" value="Assistant Professor"/></div>
+            </div>
+            <button class="btn-primary" onclick="saveProfile()">💾 Save Changes</button>
+            <p class="api-note">PATCH /api/user/profile · JWT Bearer token · Flask validates</p>
+          </div>
+
+          <div class="card mt16">
+            <div class="card-hd"><h3>🔒 Change Password</h3></div>
+            <div class="form-grid">
+              <div class="form-field"><label>Current Password</label><input type="password" id="pfOld" placeholder="Enter current password"/></div>
+              <div class="form-field"><label>New Password</label><input type="password" id="pfNew" placeholder="Min 8 characters"/></div>
+              <div class="form-field"><label>Confirm New Password</label><input type="password" id="pfConf" placeholder="Re-enter new password"/></div>
+            </div>
+            <button class="btn-secondary" onclick="changePassword()">🔑 Update Password</button>
+            <p class="api-note">PUT /api/user/password · bcrypt hash · MySQL UPDATE</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+  </main>
+</div>
+
+<!-- MODAL: Leave Details & Decision -->
+<div id="detailModal" class="modal-overlay" style="display:none" onclick="closeModal(event)">
+  <div class="modal-box">
+    <div class="modal-hd">
+      <h3>📋 Leave Request — Full Details</h3>
+      <button class="modal-x" onclick="closeModalDirect()">✕</button>
+    </div>
+    <div id="modalStudentBanner" class="modal-student-banner"></div>
+    <div id="modalInfoGrid" class="modal-info-grid"></div>
+    <div id="modalReasonBlock" class="modal-reason-block"></div>
+    <div class="modal-remark">
+      <label>Your Remark / Comment <span style="color:#ef4444">(required for rejection)</span></label>
+      <textarea id="modalRemark" rows="3" placeholder="Add your remark here..."></textarea>
+    </div>
+    <div class="modal-actions">
+      <button class="btn-approve" onclick="submitDecision('Approved')">✅ Approve Leave</button>
+      <button class="btn-reject"  onclick="submitDecision('Rejected')">❌ Reject Leave</button>
+      <button class="btn-cancel"  onclick="closeModalDirect()">Cancel</button>
+    </div>
+    <p class="modal-api-note">
+      <code>POST /api/leave/review</code> · JWT validated · RBAC: Teacher only · MySQL UPDATE leave_req

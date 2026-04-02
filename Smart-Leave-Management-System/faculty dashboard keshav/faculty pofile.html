@@ -1,0 +1,137 @@
+{% extends '_base.html' %}
+{% block title %}My Profile{% endblock %}
+{% block page_title %}My Profile{% endblock %}
+{% block page_crumb %}Account Settings{% endblock %}
+
+{% block content %}
+
+<div class="profile-layout">
+
+  <!-- LEFT: Profile Summary Card -->
+  <div class="profile-card">
+    <div class="prof-av">{{ user.name[:2].upper() }}</div>
+    <div class="prof-name">{{ user.name }}</div>
+    <div class="prof-role">{{ user.role }} · Manager</div>
+    <div class="prof-dept">{{ user.department }} Department</div>
+
+    <!-- Stats -->
+    <div class="prof-stats">
+      <div class="ps-item">
+        <div class="ps-val">{{ total_reviewed }}</div>
+        <div class="ps-lbl">Reviewed</div>
+      </div>
+      <div class="ps-item">
+        <div class="ps-val" style="color:#10b981">{{ approved_count }}</div>
+        <div class="ps-lbl">Approved</div>
+      </div>
+      <div class="ps-item">
+        <div class="ps-val" style="color:#ef4444">{{ rejected_count }}</div>
+        <div class="ps-lbl">Rejected</div>
+      </div>
+    </div>
+
+    <!-- Info -->
+    <div class="prof-info">
+      <div class="prof-row">📧 {{ user.email }}</div>
+      <div class="prof-row">📞 {{ user.phone or 'Not set' }}</div>
+      <div class="prof-row">🆔 FAC-{{ '%04d' % user.id }}</div>
+      <div class="prof-row">🏫 {{ user.department }}</div>
+      <div class="prof-row">👤 {{ user.role }}</div>
+    </div>
+  </div>
+
+  <!-- RIGHT: Edit Forms -->
+  <div>
+
+    <!-- Update Profile Form -->
+    <div class="card">
+      <div class="card-hd"><h3>✏️ Update Profile Details</h3></div>
+      <form method="POST" action="{{ url_for('profile_page') }}">
+        <input type="hidden" name="action" value="update"/>
+        <div class="form-grid">
+          <div class="form-f">
+            <label>Full Name</label>
+            <input type="text" name="name" value="{{ user.name }}" required/>
+          </div>
+          <div class="form-f">
+            <label>Employee ID (read-only)</label>
+            <input type="text" value="FAC-{{ '%04d' % user.id }}" class="inp-ro" readonly/>
+          </div>
+          <div class="form-f">
+            <label>Email Address (read-only)</label>
+            <input type="email" value="{{ user.email }}" class="inp-ro" readonly/>
+          </div>
+          <div class="form-f">
+            <label>Phone Number</label>
+            <input type="tel" name="phone"
+                   value="{{ user.phone or '' }}"
+                   placeholder="+91 XXXXX XXXXX"/>
+          </div>
+          <div class="form-f">
+            <label>Department</label>
+            <select name="department">
+              <option value="CSE"  {% if user.department=='CSE'   %}selected{% endif %}>Computer Science (CSE)</option>
+              <option value="ECE"  {% if user.department=='ECE'   %}selected{% endif %}>Electronics (ECE)</option>
+              <option value="MECH" {% if user.department=='MECH'  %}selected{% endif %}>Mechanical (MECH)</option>
+              <option value="CIVIL"{% if user.department=='CIVIL' %}selected{% endif %}>Civil Engineering</option>
+            </select>
+          </div>
+          <div class="form-f">
+            <label>Role (read-only)</label>
+            <input type="text" value="{{ user.role }}" class="inp-ro" readonly/>
+          </div>
+        </div>
+        <div class="btn-wrap">
+          <button type="submit" class="btn btn-primary">💾 Save Changes</button>
+        </div>
+        <p class="api-note">
+          POST /faculty/profile · action=update · Session validated · MySQL UPDATE users
+        </p>
+      </form>
+    </div>
+
+    <!-- Change Password Form -->
+    <div class="card mt16">
+      <div class="card-hd"><h3>🔒 Change Password</h3></div>
+      <form method="POST" action="{{ url_for('profile_page') }}">
+        <input type="hidden" name="action" value="password"/>
+        <div class="form-grid">
+          <div class="form-f">
+            <label>Current Password</label>
+            <input type="password" name="old_password"
+                   placeholder="Enter current password" required/>
+          </div>
+          <div class="form-f">
+            <label>New Password</label>
+            <input type="password" name="new_password"
+                   placeholder="Minimum 6 characters" required/>
+          </div>
+          <div class="form-f">
+            <label>Confirm New Password</label>
+            <input type="password" name="confirm_password"
+                   placeholder="Re-enter new password" required/>
+          </div>
+        </div>
+        <div class="btn-wrap">
+          <button type="submit" class="btn btn-outline">🔑 Update Password</button>
+        </div>
+        <p class="api-note">
+          POST /faculty/profile · action=password · bcrypt recommended · MySQL UPDATE
+        </p>
+      </form>
+    </div>
+
+    <!-- Logout Section -->
+    <div class="card mt16" style="padding:20px 22px;display:flex;align-items:center;
+      justify-content:space-between;gap:14px">
+      <div>
+        <div style="font-size:14px;font-weight:700;margin-bottom:4px">Sign Out</div>
+        <div style="font-size:12px;color:#64748b">This will end your current session.</div>
+      </div>
+      <a href="{{ url_for('logout') }}" class="btn btn-danger">⏻ Logout</a>
+    </div>
+
+  </div>
+</div>
+
+{% endblock %}

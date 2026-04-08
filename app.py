@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 from flask import Flask, request, render_template, redirect, session
 import mysql.connector
 
@@ -5,6 +6,9 @@ app = Flask(__name__)
 app.secret_key = "smart_leave_secret_key"
 
 # MySQL connection
+db = None
+cursor = None
+
 try:
     db = mysql.connector.connect(
         host="localhost",
@@ -16,7 +20,6 @@ try:
     cursor = db.cursor()
     print("MySQL Connected")
 
-    # Add extra profile columns if they don't exist yet
     for col, definition in [
         ("phone",      "VARCHAR(20) DEFAULT ''"),
         ("department", "VARCHAR(100) DEFAULT ''"),
@@ -26,10 +29,28 @@ try:
             cursor.execute(f"ALTER TABLE users ADD COLUMN {col} {definition}")
             db.commit()
         except Exception:
-            pass  # Column already exists
+            pass
 
 except Exception as e:
-    print("Error:", e)
+    print("MySQL Error:", e)
+
+
+def get_cursor():
+    """Return a fresh cursor, reconnecting if the connection dropped."""
+    global db, cursor
+    try:
+        if db is None or not db.is_connected():
+            db = mysql.connector.connect(
+                host="localhost",
+                user="root",
+                password="Pavan@985",
+                database="leave_system",
+                auth_plugin='mysql_native_password'
+            )
+            cursor = db.cursor()
+    except Exception as e:
+        print("Reconnect error:", e)
+    return cursor
 
 # ── Home ──────────────────────────────────────────────────────────────────────
 @app.route('/')
@@ -240,6 +261,86 @@ def user_profile():
         pending_leaves=pending_leaves,
         pw_status=request.args.get('pw')
     )
+
+# ══════════════════════════════════════════════════════════════════════════════
+# FACULTY ROUTES
+# ══════════════════════════════════════════════════════════════════════════════
+
+def faculty_required():
+    return 'user_id' in session and session.get('role') == 'Faculty'
+
+@app.route('/faculty/dashboard')
+def faculty_dashboard():
+    if not faculty_required():
+        return redirect('/login')
+
+    cursor.execute("SELECT COUNT(*) FROM leaves WHERE status='Pending'")
+    pending = cursor.fetchone()[0]
+    cursor.execute("SELECT COUNT(*) FROM leaves WHERE status='Approved'")
+    approved = cursor.fetchone()[0]
+    cursor.execute("SELECT COUNT(*) FROM leaves WHERE status='Rejected'")
+    rejected = cursor.fetchone()[0]
+
+    cursor.execute("""
+        SELECT l.id, u.name, l.leave_type, l.from_date, l.to_date, l.status
+        FROM leaves l JOIN users u ON l.user_id = u.id
+        WHERE l.status = 'Pending' ORDER BY l.id DESC LIMIT 10
+    """)
+    pending_leaves = cursor.fetchall()
+
+    return render_template(
+        'faculty Dashboard/Faculty_Dashboard.html',
+        faculty_name=session.get('user_name'),
+        pending=pending, approved=approved, rejected=rejected,
+        pending_leaves=pending_leaves
+    )
+
+@app.route('/faculty/leaves')
+def faculty_leaves():
+    if not faculty_required():
+        return redirect('/login')
+
+    status_filter = request.args.get('status', '')
+    if status_filter:
+        cursor.execute("""
+            SELECT l.id, u.name, l.leave_type, l.from_date, l.to_date, l.reason, l.status
+            FROM leaves l JOIN users u ON l.user_id = u.id
+            WHERE l.status = %s ORDER BY l.id DESC
+        """, (status_filter,))
+    else:
+        cursor.execute("""
+            SELECT l.id, u.name, l.leave_type, l.from_date, l.to_date, l.reason, l.status
+            FROM leaves l JOIN users u ON l.user_id = u.id ORDER BY l.id DESC
+        """)
+    leaves = cursor.fetchall()
+    return render_template('faculty Dashboard/Faculty_Leave.html',
+                           leaves=leaves, status_filter=status_filter)
+
+@app.route('/faculty/leave/<int:leave_id>/approve', methods=['POST'])
+def faculty_approve_leave(leave_id):
+    if not faculty_required():
+        return redirect('/login')
+    remarks = request.form.get('remarks', '')
+    faculty_name = session.get('user_name')
+    cursor.execute(
+        "UPDATE leaves SET status='Approved', faculty_name=%s, remarks=%s WHERE id=%s",
+        (faculty_name, remarks, leave_id)
+    )
+    db.commit()
+    return redirect('/faculty/leaves')
+
+@app.route('/faculty/leave/<int:leave_id>/reject', methods=['POST'])
+def faculty_reject_leave(leave_id):
+    if not faculty_required():
+        return redirect('/login')
+    remarks = request.form.get('remarks', '')
+    faculty_name = session.get('user_name')
+    cursor.execute(
+        "UPDATE leaves SET status='Rejected', faculty_name=%s, remarks=%s WHERE id=%s",
+        (faculty_name, remarks, leave_id)
+    )
+    db.commit()
+    return redirect('/faculty/leaves')
 
 # ══════════════════════════════════════════════════════════════════════════════
 # ADMIN ROUTES

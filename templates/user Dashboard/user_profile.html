@@ -1,0 +1,426 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Profile — LeaveOk</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <style>
+        /* ── Profile-specific styles ── */
+        .profile-grid {
+            display: grid;
+            grid-template-columns: 300px 1fr;
+            gap: 24px;
+            align-items: start;
+        }
+
+        /* Left column */
+        .profile-card {
+            background: #fff;
+            border-radius: 16px;
+            box-shadow: 0 1px 4px rgba(0,0,0,0.07);
+            overflow: hidden;
+        }
+
+        .profile-cover {
+            height: 90px;
+            background: linear-gradient(135deg, #0f172a, #1e3a5f, #4facfe);
+        }
+
+        .profile-avatar-wrap {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 0 20px 24px;
+            margin-top: -40px;
+        }
+
+        .profile-avatar {
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #4facfe, #00c6ff);
+            border: 4px solid #fff;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 30px;
+            font-weight: 700;
+            color: white;
+            box-shadow: 0 4px 14px rgba(79,172,254,0.4);
+        }
+
+        .profile-name {
+            margin-top: 12px;
+            font-size: 18px;
+            font-weight: 700;
+            color: #0f172a;
+        }
+
+        .profile-role {
+            margin-top: 4px;
+            font-size: 12px;
+            font-weight: 600;
+            color: #4facfe;
+            background: #eff6ff;
+            padding: 3px 12px;
+            border-radius: 20px;
+        }
+
+        .profile-email {
+            margin-top: 8px;
+            font-size: 13px;
+            color: #64748b;
+        }
+
+        .profile-divider {
+            border: none;
+            border-top: 1px solid #f1f5f9;
+            margin: 0;
+        }
+
+        .profile-stats {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            text-align: center;
+            padding: 16px 12px;
+        }
+
+        .profile-stats .stat { padding: 8px 4px; }
+        .profile-stats .stat-num { font-size: 22px; font-weight: 700; color: #0f172a; }
+        .profile-stats .stat-lbl { font-size: 11px; color: #94a3b8; margin-top: 2px; text-transform: uppercase; letter-spacing: 0.4px; }
+
+        .profile-info-list {
+            padding: 16px 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .info-row {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 13px;
+            color: #475569;
+        }
+
+        .info-row .info-icon {
+            width: 30px;
+            height: 30px;
+            border-radius: 8px;
+            background: #f1f5f9;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 14px;
+            flex-shrink: 0;
+        }
+
+        .info-row span { color: #1e293b; font-weight: 500; }
+
+        /* Right column tabs */
+        .tabs {
+            display: flex;
+            gap: 4px;
+            background: #fff;
+            border-radius: 12px;
+            padding: 6px;
+            box-shadow: 0 1px 4px rgba(0,0,0,0.07);
+            margin-bottom: 20px;
+        }
+
+        .tab-btn {
+            flex: 1;
+            padding: 10px;
+            border: none;
+            background: transparent;
+            border-radius: 8px;
+            font-size: 13px;
+            font-weight: 600;
+            color: #64748b;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .tab-btn.active {
+            background: #0f172a;
+            color: #fff;
+        }
+
+        .tab-panel { display: none; }
+        .tab-panel.active { display: block; }
+
+        /* Alerts */
+        .alert {
+            padding: 12px 16px;
+            border-radius: 10px;
+            font-size: 13px;
+            font-weight: 500;
+            margin-bottom: 16px;
+        }
+
+        .alert-success { background: #dcfce7; color: #166534; }
+        .alert-error   { background: #fee2e2; color: #991b1b; }
+
+        /* Two-col form row */
+        .form-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 16px;
+        }
+
+        @media (max-width: 900px) {
+            .profile-grid { grid-template-columns: 1fr; }
+            .form-row { grid-template-columns: 1fr; }
+        }
+    </style>
+</head>
+<body data-pw="{{ pw_status or '' }}">
+<div class="layout">
+    <!-- Sidebar -->
+    <aside class="sidebar">
+        <div class="sidebar-brand">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 40 40" width="28">
+                <circle cx="20" cy="20" r="18" fill="#4facfe" opacity="0.15"/>
+                <path d="M10 20 L16 26 L30 12" stroke="#4facfe" stroke-width="4" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+            <span>Leave<span class="brand-dot">Ok</span></span>
+        </div>
+        <nav>
+            <a href="/user/dashboard"><span class="nav-icon">⊞</span> Dashboard</a>
+            <a href="/user/apply_leave"><span class="nav-icon">＋</span> Apply Leave</a>
+            <a href="/user/leave_history"><span class="nav-icon">☰</span> Leave History</a>
+            <a href="/user/leave_status"><span class="nav-icon">◎</span> Leave Status</a>
+            <a href="/user/profile" class="active"><span class="nav-icon">👤</span> Profile</a>
+        </nav>
+        <div class="sidebar-footer">
+            <a href="/logout"><span class="nav-icon">⏻</span> Logout</a>
+        </div>
+    </aside>
+
+    <!-- Main -->
+    <div class="main">
+        <div class="topbar">
+            <h1>My Profile</h1>
+            <div class="user-info">
+                <div class="avatar">{{ (user[1] or 'U')[0]|upper }}</div>
+                <span>{{ user[1] }}</span>
+            </div>
+        </div>
+
+        <div class="content">
+            <div class="profile-grid">
+
+                <!-- ── Left: Profile Card ── -->
+                <div>
+                    <div class="profile-card">
+                        <div class="profile-cover"></div>
+                        <div class="profile-avatar-wrap">
+                            <div class="profile-avatar">{{ (user[1] or 'U')[0]|upper }}</div>
+                            <div class="profile-name">{{ user[1] }}</div>
+                            <div class="profile-role">{{ user[3] if user[3] else 'Student' }}</div>
+                            <div class="profile-email">{{ user[2] }}</div>
+                        </div>
+
+                        <hr class="profile-divider">
+
+                        <!-- Leave stats -->
+                        <div class="profile-stats">
+                            <div class="stat">
+                                <div class="stat-num">{{ total_leaves }}</div>
+                                <div class="stat-lbl">Total</div>
+                            </div>
+                            <div class="stat">
+                                <div class="stat-num" style="color:#22c55e;">{{ approved_leaves }}</div>
+                                <div class="stat-lbl">Approved</div>
+                            </div>
+                            <div class="stat">
+                                <div class="stat-num" style="color:#f59e0b;">{{ pending_leaves }}</div>
+                                <div class="stat-lbl">Pending</div>
+                            </div>
+                        </div>
+
+                        <hr class="profile-divider">
+
+                        <!-- Info list -->
+                        <div class="profile-info-list">
+                            <div class="info-row">
+                                <div class="info-icon">✉</div>
+                                <span>{{ user[2] }}</span>
+                            </div>
+                            {% if user[4] %}
+                            <div class="info-row">
+                                <div class="info-icon">📞</div>
+                                <span>{{ user[4] }}</span>
+                            </div>
+                            {% endif %}
+                            {% if user[5] %}
+                            <div class="info-row">
+                                <div class="info-icon">🏫</div>
+                                <span>{{ user[5] }}</span>
+                            </div>
+                            {% endif %}
+                            <div class="info-row">
+                                <div class="info-icon">🆔</div>
+                                <span>User ID: {{ user[0] }}</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- ── Right: Tabs ── -->
+                <div>
+                    <!-- Tab buttons -->
+                    <div class="tabs">
+                        <button class="tab-btn active" onclick="switchTab('info', this)">Personal Info</button>
+                        <button class="tab-btn" onclick="switchTab('password', this)">Change Password</button>
+                        <button class="tab-btn" onclick="switchTab('account', this)">Account</button>
+                    </div>
+
+                    <!-- Tab: Personal Info -->
+                    <div class="tab-panel active" id="tab-info">
+                        {% if pw_status == 'success' %}
+                        <div class="alert alert-success">✓ Password updated successfully.</div>
+                        {% elif pw_status == 'wrong' %}
+                        <div class="alert alert-error">✗ Current password is incorrect.</div>
+                        {% elif pw_status == 'mismatch' %}
+                        <div class="alert alert-error">✗ New passwords do not match.</div>
+                        {% endif %}
+
+                        <div class="form-card" style="max-width:100%;">
+                            <h3>Personal Information</h3>
+                            <form method="POST">
+                                <input type="hidden" name="action" value="update_info">
+                                <div class="form-row">
+                                    <div class="form-group">
+                                        <label>Full Name</label>
+                                        <input type="text" name="name" value="{{ user[1] }}" required>
+                                    </div>
+                                    <div class="form-group">
+                                        <label>Email Address</label>
+                                        <input type="email" name="email" value="{{ user[2] }}" required>
+                                    </div>
+                                </div>
+                                <div class="form-row">
+                                    <div class="form-group">
+                                        <label>Phone Number</label>
+                                        <input type="tel" name="phone" value="{{ user[4] if user[4] else '' }}" placeholder="e.g. +91 98765 43210">
+                                    </div>
+                                    <div class="form-group">
+                                        <label>Department</label>
+                                        <input type="text" name="department" value="{{ user[5] if user[5] else '' }}" placeholder="e.g. Computer Science">
+                                    </div>
+                                </div>
+                                <div class="form-group">
+                                    <label>Bio</label>
+                                    <textarea name="bio" placeholder="Write a short bio about yourself...">{{ user[6] if user[6] else '' }}</textarea>
+                                </div>
+                                <button type="submit" class="btn btn-blue">Save Changes</button>
+                            </form>
+                        </div>
+                    </div>
+
+                    <!-- Tab: Change Password -->
+                    <div class="tab-panel" id="tab-password">
+                        <div class="form-card" style="max-width:100%;">
+                            <h3>Change Password</h3>
+                            <form method="POST">
+                                <input type="hidden" name="action" value="change_password">
+                                <div class="form-group">
+                                    <label>Current Password</label>
+                                    <input type="password" name="current_password" placeholder="Enter current password" required>
+                                </div>
+                                <div class="form-row">
+                                    <div class="form-group">
+                                        <label>New Password</label>
+                                        <input type="password" name="new_password" id="new_pw" placeholder="Enter new password" required>
+                                    </div>
+                                    <div class="form-group">
+                                        <label>Confirm New Password</label>
+                                        <input type="password" name="confirm_password" id="confirm_pw" placeholder="Confirm new password" required>
+                                    </div>
+                                </div>
+                                <div id="pw-match-msg" style="font-size:12px; margin-bottom:8px;"></div>
+                                <button type="submit" class="btn btn-blue">Update Password</button>
+                            </form>
+                        </div>
+                    </div>
+
+                    <!-- Tab: Account -->
+                    <div class="tab-panel" id="tab-account">
+                        <div class="form-card" style="max-width:100%;">
+                            <h3>Account Details</h3>
+                            <div style="display:flex; flex-direction:column; gap:16px; margin-top:8px;">
+                                <div style="display:flex; justify-content:space-between; align-items:center; padding:14px 16px; background:#f8fafc; border-radius:10px; border:1px solid #e2e8f0;">
+                                    <div>
+                                        <div style="font-size:12px; color:#64748b; font-weight:600; text-transform:uppercase; letter-spacing:0.4px;">User ID</div>
+                                        <div style="font-size:15px; font-weight:700; color:#0f172a; margin-top:2px;">#{{ user[0] }}</div>
+                                    </div>
+                                    <span style="font-size:20px;">🆔</span>
+                                </div>
+                                <div style="display:flex; justify-content:space-between; align-items:center; padding:14px 16px; background:#f8fafc; border-radius:10px; border:1px solid #e2e8f0;">
+                                    <div>
+                                        <div style="font-size:12px; color:#64748b; font-weight:600; text-transform:uppercase; letter-spacing:0.4px;">Role</div>
+                                        <div style="font-size:15px; font-weight:700; color:#0f172a; margin-top:2px;">{{ user[3] if user[3] else 'Student' }}</div>
+                                    </div>
+                                    <span style="font-size:20px;">🎓</span>
+                                </div>
+                                <div style="display:flex; justify-content:space-between; align-items:center; padding:14px 16px; background:#f8fafc; border-radius:10px; border:1px solid #e2e8f0;">
+                                    <div>
+                                        <div style="font-size:12px; color:#64748b; font-weight:600; text-transform:uppercase; letter-spacing:0.4px;">Registered Email</div>
+                                        <div style="font-size:15px; font-weight:700; color:#0f172a; margin-top:2px;">{{ user[2] }}</div>
+                                    </div>
+                                    <span style="font-size:20px;">✉️</span>
+                                </div>
+                                <div style="display:flex; justify-content:space-between; align-items:center; padding:14px 16px; background:#fff0f0; border-radius:10px; border:1px solid #fecaca;">
+                                    <div>
+                                        <div style="font-size:14px; font-weight:700; color:#991b1b;">Danger Zone</div>
+                                        <div style="font-size:12px; color:#b91c1c; margin-top:2px;">Sign out from all sessions</div>
+                                    </div>
+                                    <a href="/logout"><button class="btn btn-red" style="font-size:13px;">Logout</button></a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    function switchTab(name, btn) {
+        document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+        document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+        document.getElementById('tab-' + name).classList.add('active');
+        btn.classList.add('active');
+    }
+
+    // Password match indicator
+    const newPw = document.getElementById('new_pw');
+    const confirmPw = document.getElementById('confirm_pw');
+    const msg = document.getElementById('pw-match-msg');
+
+    if (confirmPw) {
+        confirmPw.addEventListener('input', () => {
+            if (confirmPw.value === '') { msg.textContent = ''; return; }
+            if (newPw.value === confirmPw.value) {
+                msg.textContent = '✓ Passwords match';
+                msg.style.color = '#16a34a';
+            } else {
+                msg.textContent = '✗ Passwords do not match';
+                msg.style.color = '#dc2626';
+            }
+        });
+    }
+
+    // Auto-open password tab if there's a pw status
+    const pwStatus = document.body.dataset.pw;
+    if (pwStatus) {
+        switchTab('password', document.querySelectorAll('.tab-btn')[1]);
+    }
+</script>
+</body>
+</html>

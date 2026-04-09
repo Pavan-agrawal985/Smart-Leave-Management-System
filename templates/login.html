@@ -1,32 +1,40 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-    <title>Login - Leave Management System</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login — LeaveOk</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
 </head>
-<body>
+<body class="auth-page">
+    <div class="auth-card">
+        <div class="logo">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 260 80" width="180">
+                <circle cx="36" cy="40" r="30" fill="#4facfe" opacity="0.12"/>
+                <path d="M18 40 L30 52 L54 28" stroke="#4facfe" stroke-width="8" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+                <text x="72" y="54" fill="#0f172a" font-family="Segoe UI,Arial,sans-serif" font-size="42" font-weight="700">Leave</text>
+                <text x="198" y="54" fill="#4facfe" font-family="Segoe UI,Arial,sans-serif" font-size="42" font-weight="700">Ok</text>
+            </svg>
+        </div>
+        <h2>Welcome back</h2>
 
-    <div class="container">
-
-        <h2>Login</h2>
+        {% if error %}
+        <div class="error-msg">{{ error }}</div>
+        {% endif %}
 
         <form method="POST" action="/login">
-
             <label>Email</label>
-            <input type="email" name="email" placeholder="Enter Email" required>
+            <input type="email" name="email" placeholder="Enter your email" required>
 
             <label>Password</label>
-            <input type="password" name="password" placeholder="Enter Password" required>
+            <input type="password" name="password" placeholder="Enter your password" required>
 
-            <button type="submit">Login</button>
-
-            <p>Don't have an account?
-                <a href="/register">Register</a>
-            </p>
-
+            <button type="submit" class="btn-primary">Login</button>
         </form>
 
+        <div class="auth-footer">
+            Don't have an account? <a href="/register">Register</a>
+        </div>
     </div>
-
 </body>
 </html>

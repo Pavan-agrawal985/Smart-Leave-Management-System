@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Leave Requests — LeaveOk</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <style>
+        .user-cell { display: flex; align-items: center; gap: 10px; }
+        .mini-avatar {
+            width: 32px; height: 32px; border-radius: 50%;
+            background: linear-gradient(135deg, #4facfe, #00c6ff);
+            display: flex; align-items: center; justify-content: center;
+            color: white; font-weight: 700; font-size: 12px; flex-shrink: 0;
+        }
+        .action-group { display: flex; gap: 6px; }
+        .filter-bar { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+        .filter-bar input, .filter-bar select {
+            padding: 8px 14px; border: 1.5px solid #e2e8f0;
+            border-radius: 8px; font-size: 13px; color: #1e293b;
+            background: #f8fafc; outline: none; font-family: inherit;
+        }
+        .filter-bar input:focus, .filter-bar select:focus { border-color: #4facfe; background: #fff; }
+        .filter-bar input { width: 200px; }
+        .reason-cell { max-width: 160px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    </style>
+</head>
+<body>
+<div class="layout">
+    <aside class="sidebar">
+        <div class="sidebar-brand">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 40 40" width="28">
+                <circle cx="20" cy="20" r="18" fill="#4facfe" opacity="0.15"/>
+                <path d="M10 20 L16 26 L30 12" stroke="#4facfe" stroke-width="4" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+            <span>Leave<span class="brand-dot">Ok</span></span>
+        </div>
+        <nav>
+            <a href="/faculty/dashboard"><span class="nav-icon">⊞</span> Dashboard</a>
+            <a href="/faculty/leaves" class="active"><span class="nav-icon">📋</span> Leave Requests</a>
+        </nav>
+        <div class="sidebar-footer">
+            <a href="/logout"><span class="nav-icon">⏻</span> Logout</a>
+        </div>
+    </aside>
+
+    <div class="main">
+        <div class="topbar">
+            <div>
+                <h1>Leave Requests</h1>
+                <p style="font-size:13px;color:#64748b;margin-top:2px;">Review and manage all student leave applications.</p>
+            </div>
+        </div>
+
+        <div class="content">
+            <div class="table-card">
+                <div class="table-card-header">
+                    <h3>All Leave Requests
+                        <span style="font-size:12px;font-weight:400;color:#94a3b8;margin-left:6px;" id="countLabel"></span>
+                    </h3>
+                    <div class="filter-bar">
+                        <input type="text" id="searchInput" placeholder="🔍  Search user..." oninput="applyFilters()">
+                        <select id="statusFilter" onchange="applyFilters()">
+                            <option value="">All Status</option>
+                            <option value="Pending" {% if status_filter == 'Pending' %}selected{% endif %}>Pending</option>
+                            <option value="Approved" {% if status_filter == 'Approved' %}selected{% endif %}>Approved</option>
+                            <option value="Rejected" {% if status_filter == 'Rejected' %}selected{% endif %}>Rejected</option>
+                        </select>
+                    </div>
+                </div>
+                <table id="leavesTable">
+                    <thead>
+                        <tr>
+                            <th>#</th>
+                            <th>User</th>
+                            <th>Type</th>
+                            <th>From</th>
+                            <th>To</th>
+                            <th>Reason</th>
+                            <th>Status</th>
+                            <th>Action</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for leave in leaves %}
+                        <tr>
+                            <td style="color:#94a3b8;font-size:13px;">{{ leave[0] }}</td>
+                            <td>
+                                <div class="user-cell">
+                                    <div class="mini-avatar">{{ leave[1][0]|upper }}</div>
+                                    <span style="font-weight:500;">{{ leave[1] }}</span>
+                                </div>
+                            </td>
+                            <td>{{ leave[2] }}</td>
+                            <td>{{ leave[3] }}</td>
+                            <td>{{ leave[4] }}</td>
+                            <td><div class="reason-cell" title="{{ leave[5] }}">{{ leave[5] }}</div></td>
+                            <td><span class="badge badge-{{ leave[6]|lower }}">{{ leave[6] }}</span></td>
+                            <td>
+                                {% if leave[6] == 'Pending' %}
+                                <div class="action-group">
+                                    <button class="btn btn-green review-btn"
+                                            style="padding:5px 12px;font-size:12px;"
+                                            data-id="{{ leave[0] }}"
+                                            data-name="{{ leave[1] }}"
+                                            data-action="approve">✓ Approve</button>
+                                    <button class="btn btn-red review-btn"
+                                            style="padding:5px 12px;font-size:12px;"
+                                            data-id="{{ leave[0] }}"
+                                            data-name="{{ leave[1] }}"
+                                            data-action="reject">✕ Reject</button>
+                                </div>
+                                {% else %}
+                                <span style="color:#94a3b8;font-size:13px;">—</span>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% else %}
+                        <tr class="empty-row"><td colspan="8">No leave requests found.</td></tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Remarks Modal -->
+<div id="remarksModal" style="display:none;position:fixed;inset:0;background:rgba(15,23,42,0.5);z-index:999;align-items:center;justify-content:center;backdrop-filter:blur(4px);">
+    <div style="background:#fff;border-radius:16px;width:460px;max-width:95vw;box-shadow:0 24px 60px rgba(0,0,0,0.2);overflow:hidden;">
+        <div style="padding:18px 22px;border-bottom:1px solid #e2e8f0;display:flex;justify-content:space-between;align-items:center;background:#f8fafc;">
+            <h3 id="modalTitle" style="font-size:15px;font-weight:700;color:#0f172a;"></h3>
+            <button onclick="closeModal()" style="background:none;border:none;font-size:20px;cursor:pointer;color:#64748b;">✕</button>
+        </div>
+        <form method="POST" id="actionForm">
+            <div style="padding:22px;">
+                <div style="background:#f8fafc;border-radius:10px;padding:12px 14px;margin-bottom:16px;font-size:13px;color:#475569;">
+                    Reviewing leave for <strong id="modalUser"></strong>
+                </div>
+                <label style="display:block;font-size:13px;font-weight:600;color:#475569;margin-bottom:6px;">
+                    Remarks <span style="color:#94a3b8;font-weight:400;">(optional)</span>
+                </label>
+                <textarea name="remarks" id="remarksInput"
+                    style="width:100%;border:1.5px solid #cbd5e1;border-radius:8px;padding:10px 12px;font-size:14px;font-family:inherit;resize:vertical;height:100px;outline:none;"
+                    placeholder="Add a remark or reason..."></textarea>
+            </div>
+            <div style="padding:14px 22px;border-top:1px solid #e2e8f0;display:flex;gap:10px;">
+                <button type="submit" class="btn" id="confirmBtn">Confirm</button>
+                <button type="button" class="btn btn-ghost" onclick="closeModal()">Cancel</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+    function openModal(leaveId, userName, action) {
+        var modal = document.getElementById('remarksModal');
+        var form  = document.getElementById('actionForm');
+        document.getElementById('modalUser').textContent = userName;
+        document.getElementById('remarksInput').value = '';
+        form.action = '/faculty/leave/' + leaveId + '/' + action;
+
+        var title = document.getElementById('modalTitle');
+        var btn   = document.getElementById('confirmBtn');
+        if (action === 'approve') {
+            title.textContent = '✓ Approve Leave Request';
+            btn.className = 'btn btn-green';
+            btn.textContent = '✓ Confirm Approval';
+        } else {
+            title.textContent = '✕ Reject Leave Request';
+            btn.className = 'btn btn-red';
+            btn.textContent = '✕ Confirm Rejection';
+        }
+        modal.style.display = 'flex';
+    }
+
+    function closeModal() {
+        document.getElementById('remarksModal').style.display = 'none';
+    }
+
+    document.addEventListener('DOMContentLoaded', function() {
+        document.querySelectorAll('.review-btn').forEach(function(btn) {
+            btn.addEventListener('click', function() {
+                openModal(btn.dataset.id, btn.dataset.name, btn.dataset.action);
+            });
+        });
+
+        document.getElementById('remarksModal').addEventListener('click', function(e) {
+            if (e.target === this) closeModal();
+        });
+
+        var total = document.querySelectorAll('#leavesTable tbody tr:not(.empty-row)').length;
+        document.getElementById('countLabel').textContent = total + ' total';
+    });
+
+    document.addEventListener('keydown', function(e) {
+        if (e.key === 'Escape') closeModal();
+    });
+
+    function applyFilters() {
+        var search = document.getElementById('searchInput').value.toLowerCase();
+        var status = document.getElementById('statusFilter').value.toLowerCase();
+        var visible = 0;
+
+        document.querySelectorAll('#leavesTable tbody tr:not(.empty-row)').forEach(function(row) {
+            var text      = row.textContent.toLowerCase();
+            var badge     = row.querySelector('.badge');
+            var rowStatus = badge ? badge.textContent.toLowerCase() : '';
+            var show = (!search || text.includes(search)) && (!status || rowStatus === status);
+            row.style.display = show ? '' : 'none';
+            if (show) visible++;
+        });
+        document.getElementById('countLabel').textContent = visible + ' results';
+    }
+</script>
+</body>
+</html>

@@ -1,112 +1,24 @@
 <!DOCTYPE html>
-<html>
-
+<html lang="en">
 <head>
-
-    <title>Smart Leave Management System</title>
-
-    <style>
-        body {
-            margin: 0;
-            font-family: Arial, sans-serif;
-            background: linear-gradient(135deg, #4facfe, #00f2fe);
-            height: 100vh;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-        }
-
-        .container {
-
-            background: white;
-            padding: 40px;
-            border-radius: 10px;
-            box-shadow: 0 0 15px rgba(0, 0, 0, 0.2);
-            text-align: center;
-            width: 350px;
-
-        }
-
-        h1 {
-
-            color: #2c3e50;
-            margin-bottom: 10px;
-
-        }
-
-        p {
-
-            color: gray;
-            margin-bottom: 30px;
-
-        }
-
-        button {
-
-            width: 140px;
-            padding: 12px;
-            margin: 10px;
-            border: none;
-            border-radius: 5px;
-            font-size: 16px;
-            cursor: pointer;
-            transition: 0.3s;
-
-        }
-
-        .login {
-
-            background: #5dade2;
-            color: white;
-
-        }
-
-        .register {
-
-            background: white;
-            border: 2px solid #5dade2;
-            color: #5dade2;
-
-        }
-
-        .login:hover {
-
-            background: #3498db;
-
-        }
-
-        .register:hover {
-
-            background: #5dade2;
-            color: white;
-
-        }
-    </style>
-
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LeaveOk — Leave Management System</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
 </head>
-
-<body>
-
-    <div class="container">
-
-        <h1>Smart Leave Management</h1>
-
-        <p>Manage leaves easily and efficiently</p>
-
-        <a href="/login">
-            <button class="login">
-                Login
-            </button>
-        </a>
-
-        <a href="/register">
-            <button class="register">
-                Register
-            </button>
-        </a>
-
+<body class="auth-page">
+    <div class="auth-card" style="text-align:center;">
+        <div class="logo">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 260 80" width="200">
+                <circle cx="36" cy="40" r="30" fill="#4facfe" opacity="0.12"/>
+                <path d="M18 40 L30 52 L54 28" stroke="#4facfe" stroke-width="8" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+                <text x="72" y="54" fill="#0f172a" font-family="Segoe UI,Arial,sans-serif" font-size="42" font-weight="700">Leave</text>
+                <text x="198" y="54" fill="#4facfe" font-family="Segoe UI,Arial,sans-serif" font-size="42" font-weight="700">Ok</text>
+            </svg>
+        </div>
+        <p style="color:#64748b; font-size:14px; margin-bottom:28px;">Smart Leave Management System</p>
+        <a href="/login"><button class="btn-primary" style="width:100%;padding:12px;margin-bottom:12px;background:linear-gradient(135deg,#4facfe,#00c6ff);border:none;color:white;font-size:15px;font-weight:600;border-radius:8px;cursor:pointer;">Login</button></a>
+        <a href="/register"><button class="btn-outline" style="width:100%;padding:12px;background:transparent;border:2px solid #4facfe;color:#4facfe;font-size:15px;font-weight:600;border-radius:8px;cursor:pointer;">Register</button></a>
     </div>
-
 </body>
-
 </html>

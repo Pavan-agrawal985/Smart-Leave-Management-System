@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Leave History — LeaveOk</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+<div class="layout">
+    <aside class="sidebar">
+        <div class="sidebar-brand">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 40 40" width="28">
+                <circle cx="20" cy="20" r="18" fill="#4facfe" opacity="0.15"/>
+                <path d="M10 20 L16 26 L30 12" stroke="#4facfe" stroke-width="4" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+            <span>Leave<span class="brand-dot">Ok</span></span>
+        </div>
+        <nav>
+            <a href="/user/dashboard"><span class="nav-icon">⊞</span> Dashboard</a>
+            <a href="/user/apply_leave"><span class="nav-icon">＋</span> Apply Leave</a>
+            <a href="/user/leave_history" class="active"><span class="nav-icon">☰</span> Leave History</a>
+            <a href="/user/leave_status"><span class="nav-icon">◎</span> Leave Status</a>
+            <a href="/user/profile"><span class="nav-icon">👤</span> Profile</a>
+        </nav>
+        <div class="sidebar-footer">
+            <a href="/logout"><span class="nav-icon">⏻</span> Logout</a>
+        </div>
+    </aside>
+
+    <div class="main">
+        <div class="topbar">
+            <h1>Leave History</h1>
+            <a href="/user/apply_leave"><button class="btn btn-blue">＋ Apply Leave</button></a>
+        </div>
+        <div class="content">
+            <div class="table-card">
+                <div class="table-card-header">
+                    <h3>All Leave Requests</h3>
+                </div>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Leave Type</th>
+                            <th>From</th>
+                            <th>To</th>
+                            <th>Status</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for leave in leaves %}
+                        <tr>
+                            <td>{{ leave[0] }}</td>
+                            <td>{{ leave[1] }}</td>
+                            <td>{{ leave[2] }}</td>
+                            <td>{{ leave[3] }}</td>
+                            <td><span class="badge badge-{{ leave[4]|lower }}">{{ leave[4] }}</span></td>
+                        </tr>
+                        {% else %}
+                        <tr class="empty-row"><td colspan="5">No leave records found.</td></tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+</body>
+</html>

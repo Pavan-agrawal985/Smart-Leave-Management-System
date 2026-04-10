@@ -1,0 +1,200 @@
+{% extends '_base.html' %}
+{% block title %}Dashboard{% endblock %}
+{% block page_title %}Dashboard{% endblock %}
+{% block page_crumb %}Overview{% endblock %}
+
+{% block content %}
+
+<!-- Welcome Bar -->
+<div style="background:linear-gradient(135deg,#4facfe,#00c6ff);border-radius:14px;
+  padding:22px 26px;margin-bottom:20px;display:flex;justify-content:space-between;
+  align-items:center;color:#fff;">
+  <div>
+    <div style="font-size:20px;font-weight:800;margin-bottom:4px">
+      Welcome back, {{ session.get('user_name','Faculty') }} 👋
+    </div>
+    <div style="font-size:13px;opacity:.85">
+      {{ session.get('dept','CSE') }} Department &nbsp;·&nbsp; Faculty / Manager
+    </div>
+  </div>
+  <div style="text-align:right;font-size:12px;opacity:.8" id="welcomeDate"></div>
+</div>
+
+<!-- STAT CARDS -->
+<div class="stats-row">
+  <div class="stat-card" style="--sc:#f59e0b">
+    <div class="sc-icon">⏳</div>
+    <div>
+      <div class="sc-num">{{ pending }}</div>
+      <div class="sc-lbl">Pending Requests</div>
+    </div>
+    <div class="sc-bg">⏳</div>
+  </div>
+  <div class="stat-card" style="--sc:#10b981">
+    <div class="sc-icon">✅</div>
+    <div>
+      <div class="sc-num">{{ approved_month }}</div>
+      <div class="sc-lbl">Approved This Month</div>
+    </div>
+    <div class="sc-bg">✅</div>
+  </div>
+  <div class="stat-card" style="--sc:#ef4444">
+    <div class="sc-icon">❌</div>
+    <div>
+      <div class="sc-num">{{ rejected_month }}</div>
+      <div class="sc-lbl">Rejected This Month</div>
+    </div>
+    <div class="sc-bg">❌</div>
+  </div>
+  <div class="stat-card" style="--sc:#4facfe">
+    <div class="sc-icon">📅</div>
+    <div>
+      <div class="sc-num">{{ approved_today }}</div>
+      <div class="sc-lbl">Approved Today</div>
+    </div>
+    <div class="sc-bg">📅</div>
+  </div>
+</div>
+
+<!-- TWO COLUMN -->
+<div class="two-col">
+
+  <!-- Today's New Requests -->
+  <div class="card">
+    <div class="card-hd">
+      <h3>Today's New Requests</h3>
+      <span class="chip amber">{{ today_list|length }} New</span>
+    </div>
+    {% if today_list %}
+      {% for r in today_list %}
+      <div class="today-item">
+        <div class="ti-av">{{ r.student_name[:2].upper() }}</div>
+        <div style="flex:1">
+          <div class="ti-name">{{ r.student_name }}</div>
+          <div class="ti-meta">
+            {{ r.department }} · {{ r.leave_type }} ·
+            {{ r.start_date }} – {{ r.end_date }}
+          </div>
+        </div>
+        <span class="badge b-{{ r.leave_type.lower() }}">{{ r.leave_type }}</span>
+      </div>
+      {% endfor %}
+    {% else %}
+      <div class="empty-state">
+        <div class="es-icon">🎉</div>
+        No new requests today!
+      </div>
+    {% endif %}
+  </div>
+
+  <!-- Leave Type Breakdown -->
+  <div class="card">
+    <div class="card-hd">
+      <h3>Leave Type Breakdown</h3>
+      <span class="chip">All Time</span>
+    </div>
+    {% set colors = {'Medical':'#3b82f6','Casual':'#a78bfa','Emergency':'#ef4444','Academic':'#10b981'} %}
+    {% set total_b = breakdown|sum(attribute='cnt') or 1 %}
+    {% for item in breakdown %}
+    {% set pct = ((item.cnt/total_b)*100)|round|int %}
+    {% set color = colors.get(item.leave_type,'#64748b') %}
+    <div class="bd-item">
+      <div class="bd-top">
+        <span class="bd-lbl">{{ item.leave_type }}</span>
+        <span class="bd-cnt">{{ item.cnt }} requests</span>
+      </div>
+      <div class="bd-bar">
+        <div class="bd-fill" data-pct="{{ pct }}" data-color="{{ color }}"></div>
+      </div>
+    </div>
+    {% else %}
+    <div class="empty-state">No data yet.</div>
+    {% endfor %}
+  </div>
+</div>
+
+<!-- QUICK PENDING ACTIONS -->
+<div class="card mt16">
+  <div class="card-hd">
+    <h3>⚡ Quick Actions — Pending Requests</h3>
+    <a href="{{ url_for('requests_page') }}" class="btn btn-primary btn-xs sm">View All →</a>
+  </div>
+  <div class="tbl-wrap">
+    <table class="tbl">
+      <thead>
+        <tr>
+          <th>Student</th><th>Leave Type</th>
+          <th>From</th><th>To</th><th>Days</th><th>Reason</th><th>Action</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for r in quick_pending %}
+        <tr>
+          <td>
+            <b>{{ r.student_name }}</b><br>
+            <span style="font-size:11px;color:#64748b">{{ r.department }}</span>
+          </td>
+          <td><span class="badge b-{{ r.leave_type.lower() }}">{{ r.leave_type }}</span></td>
+          <td>{{ r.start_date }}</td>
+          <td>{{ r.end_date }}</td>
+          <td><b>{{ r.total_days }}</b></td>
+          <td style="max-width:150px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap"
+              title="{{ r.reason }}">{{ r.reason }}</td>
+          <td>
+            <div style="display:flex;gap:5px">
+              <button class="btn btn-xs btn-view review-btn"
+                data-id="{{ r.id }}"
+                data-name="{{ r.student_name }}"
+                data-type="{{ r.leave_type }}"
+                data-from="{{ r.start_date }}"
+                data-to="{{ r.end_date }}"
+                data-days="{{ r.total_days }}"
+                data-reason="{{ r.reason | e }}"
+                data-dept="{{ r.department }}">
+                Detail
+              </button>
+              <!-- Quick Approve -->
+              <form method="POST" action="{{ url_for('review_leave') }}" style="display:inline">
+                <input type="hidden" name="leave_id" value="{{ r.id }}"/>
+                <input type="hidden" name="decision" value="Approved"/>
+                <input type="hidden" name="remark"   value="Approved by faculty."/>
+                <button type="submit" class="btn btn-xs btn-ok">✓</button>
+              </form>
+            </div>
+          </td>
+        </tr>
+        {% else %}
+        <tr><td colspan="7" class="empty-state">No pending requests 🎉</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.getElementById('welcomeDate').textContent =
+  new Date().toLocaleDateString('en-IN',{weekday:'long',day:'2-digit',month:'long',year:'numeric'});
+
+document.addEventListener('DOMContentLoaded', function () {
+  // Apply breakdown bar widths and colors from data attributes
+  document.querySelectorAll('.bd-fill[data-pct]').forEach(function (el) {
+    el.style.width = el.dataset.pct + '%';
+    el.style.background = el.dataset.color;
+  });
+
+  // Wire up quick-action review buttons
+  document.querySelectorAll('.review-btn').forEach(function (btn) {
+    btn.addEventListener('click', function () {
+      openModal(
+        btn.dataset.id, btn.dataset.name, btn.dataset.type,
+        btn.dataset.from, btn.dataset.to, btn.dataset.days,
+        btn.dataset.reason, btn.dataset.dept
+      );
+    });
+  });
+});
+</script>
+{% endblock %}

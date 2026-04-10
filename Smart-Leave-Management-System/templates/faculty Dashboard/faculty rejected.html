@@ -1,0 +1,57 @@
+{% extends '_base.html' %}
+{% block title %}Rejected Leaves{% endblock %}
+{% block page_title %}Rejected Leaves{% endblock %}
+{% block page_crumb %}All Rejected{% endblock %}
+
+{% block content %}
+
+<div class="card">
+  <div class="card-hd">
+    <h3>❌ Rejected Leave Requests</h3>
+    <span class="chip red">{{ rejected|length }} Records</span>
+  </div>
+  <div class="tbl-wrap">
+    <table class="tbl">
+      <thead>
+        <tr>
+          <th>Leave ID</th><th>Student</th><th>Dept</th>
+          <th>Type</th><th>From</th><th>To</th><th>Days</th>
+          <th>Rejected On</th><th>Reason for Rejection</th><th>Action</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for r in rejected %}
+        <tr>
+          <td><code style="font-family:monospace;font-size:11px;background:#ede9fe;
+            color:#6d28d9;padding:2px 7px;border-radius:4px">LV-{{ r.id }}</code></td>
+          <td><b>{{ r.student_name }}</b><br>
+            <span style="font-size:11px;color:#64748b">{{ r.department }}</span></td>
+          <td>{{ r.department }}</td>
+          <td><span class="badge b-{{ r.leave_type.lower() }}">{{ r.leave_type }}</span></td>
+          <td>{{ r.start_date }}</td>
+          <td>{{ r.end_date }}</td>
+          <td>{{ r.total_days }}</td>
+          <td style="font-size:12px;color:#64748b">
+            {{ r.updated_at.strftime('%d %b %Y') if r.updated_at else '—' }}
+          </td>
+          <td style="font-size:12px;color:#dc2626;max-width:180px;
+            overflow:hidden;text-overflow:ellipsis;white-space:nowrap"
+            title="{{ r.faculty_remark }}">{{ r.faculty_remark or '—' }}</td>
+          <td>
+            <a href="{{ url_for('leave_details', leave_id=r.id) }}"
+               class="btn btn-xs btn-view">View</a>
+          </td>
+        </tr>
+        {% else %}
+        <tr>
+          <td colspan="10" class="empty-state">
+            <div class="es-icon">❌</div>No rejected records found.
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+{% endblock %}

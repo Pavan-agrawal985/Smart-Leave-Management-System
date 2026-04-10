@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Apply Leave — LeaveOk</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+<div class="layout">
+    <aside class="sidebar">
+        <div class="sidebar-brand">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 40 40" width="28">
+                <circle cx="20" cy="20" r="18" fill="#4facfe" opacity="0.15"/>
+                <path d="M10 20 L16 26 L30 12" stroke="#4facfe" stroke-width="4" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+            <span>Leave<span class="brand-dot">Ok</span></span>
+        </div>
+        <nav>
+            <a href="/user/dashboard"><span class="nav-icon">⊞</span> Dashboard</a>
+            <a href="/user/apply_leave" class="active"><span class="nav-icon">＋</span> Apply Leave</a>
+            <a href="/user/leave_history"><span class="nav-icon">☰</span> Leave History</a>
+            <a href="/user/leave_status"><span class="nav-icon">◎</span> Leave Status</a>
+            <a href="/user/profile"><span class="nav-icon">👤</span> Profile</a>
+        </nav>
+        <div class="sidebar-footer">
+            <a href="/logout"><span class="nav-icon">⏻</span> Logout</a>
+        </div>
+    </aside>
+
+    <div class="main">
+        <div class="topbar">
+            <h1>Apply Leave</h1>
+        </div>
+        <div class="content">
+            <div class="form-card">
+                <h3>New Leave Application</h3>
+                <form method="POST" action="/user/apply_leave">
+                    <div class="form-group">
+                        <label>Leave Type</label>
+                        <select name="leave_type" required>
+                            <option value="">Select leave type</option>
+                            <option value="Sick Leave">Sick Leave</option>
+                            <option value="Casual Leave">Casual Leave</option>
+                            <option value="Emergency Leave">Emergency Leave</option>
+                            <option value="Other">Other</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>From Date</label>
+                        <input type="date" name="from_date" required>
+                    </div>
+                    <div class="form-group">
+                        <label>To Date</label>
+                        <input type="date" name="to_date" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Reason</label>
+                        <textarea name="reason" placeholder="Describe the reason for your leave..." required></textarea>
+                    </div>
+                    <button type="submit" class="btn btn-blue">Submit Application</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+</body>
+</html>

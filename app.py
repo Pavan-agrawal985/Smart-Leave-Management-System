@@ -70,6 +70,8 @@ from flask import Flask, request, render_template, redirect, session
 import mysql.connector
 import os
 from werkzeug.utils import secure_filename
+import bcrypt
+import re
 
 app = Flask(__name__)
 app.secret_key = "smart_leave_secret_key"
@@ -81,6 +83,29 @@ os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 
 def allowed_file(filename):
     return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
+
+# ── Password helpers ──────────────────────────────────────────────────────────
+# NFR-02 (D-SEC-04): bcrypt hashing — passwords never stored in plain text
+def hash_password(plain):
+    return bcrypt.hashpw(plain.encode('utf-8'), bcrypt.gensalt()).decode('utf-8')
+
+def check_password(plain, hashed):
+    return bcrypt.checkpw(plain.encode('utf-8'), hashed.encode('utf-8'))
+
+def validate_password_strength(password):
+    """
+    Enforces: min 8 chars, at least one letter, one digit, one special character.
+    Returns an error string or None if valid.
+    """
+    if len(password) < 8:
+        return "Password must be at least 8 characters."
+    if not re.search(r'[A-Za-z]', password):
+        return "Password must contain at least one letter."
+    if not re.search(r'\d', password):
+        return "Password must contain at least one number."
+    if not re.search(r'[!@#$%^&*(),.?\":{}|<>_\-\+=/\\]', password):
+        return "Password must contain at least one special character (!@#$%^&* etc.)."
+    return None
 
 db = None
 cursor = None
@@ -201,9 +226,12 @@ def register():
 
         if not name or not email or not password:
             return render_template("register.html", error="All fields are required.")
+        pw_error = validate_password_strength(password)
+        if pw_error:
+            return render_template("register.html", error=pw_error)
         try:
             q("INSERT INTO users(name,email,password,role) VALUES(%s,%s,%s,%s)",
-              (name, email, password, role))
+              (name, email, hash_password(password), role))
             commit()
         except mysql.connector.errors.IntegrityError:
             return render_template("register.html", error="Email already registered.")
@@ -222,10 +250,10 @@ def login():
         email    = request.form['email']
         password = request.form['password']
 
-        q("SELECT * FROM users WHERE email=%s AND password=%s", (email, password))
+        q("SELECT * FROM users WHERE email=%s", (email,))
         user = cursor.fetchone()
 
-        if user:
+        if user and check_password(password, user[3]):
             session['user_id']    = user[0]
             session['user_name']  = user[1]
             session['user_email'] = user[2]
@@ -391,10 +419,14 @@ def user_profile():
         elif action == 'change_password':
             q("SELECT password FROM users WHERE id=%s", (uid,))
             row = cursor.fetchone()
-            if row and row[0] == request.form['current_password']:
-                if request.form['new_password'] == request.form['confirm_password']:
+            if row and check_password(request.form['current_password'], row[0]):
+                new_pw = request.form['new_password']
+                pw_error = validate_password_strength(new_pw)
+                if pw_error:
+                    return redirect('/user/profile?pw=weak')
+                if new_pw == request.form['confirm_password']:
                     q("UPDATE users SET password=%s WHERE id=%s",
-                      (request.form['new_password'], uid))
+                      (hash_password(new_pw), uid))
                     commit()
                     return redirect('/user/profile?pw=success')
                 else:

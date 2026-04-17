@@ -34,7 +34,11 @@
             <input type="email" name="email" placeholder="Enter your email" required>
 
             <label>Password</label>
-            <input type="password" name="password" placeholder="Create a password" required>
+            <input type="password" name="password" id="reg_pw" placeholder="Create a password" required>
+            <div id="pw_hint" style="font-size:11px;color:#94a3b8;margin-top:4px;">
+                Min 8 chars · at least one letter, number &amp; special character (!@#$%^&amp;*)
+            </div>
+            <div id="pw_strength" style="font-size:12px;margin-top:4px;"></div>
 
             <label>Role</label>
             <select name="role">
@@ -50,5 +54,21 @@
             Already have an account? <a href="/login">Login</a>
         </div>
     </div>
+<script>
+    var pwInput = document.getElementById('reg_pw');
+    var pwStrength = document.getElementById('pw_strength');
+    if (pwInput) {
+        pwInput.addEventListener('input', function () {
+            var v = pwInput.value;
+            var ok = v.length >= 8
+                  && /[A-Za-z]/.test(v)
+                  && /\d/.test(v)
+                  && /[!@#$%^&*()\-_=+,.?":{}|<>\\\/]/.test(v);
+            if (!v) { pwStrength.textContent = ''; return; }
+            pwStrength.textContent = ok ? '✓ Strong password' : '✗ Weak — add letters, numbers & special chars';
+            pwStrength.style.color = ok ? '#16a34a' : '#dc2626';
+        });
+    }
+</script>
 </body>
 </html>

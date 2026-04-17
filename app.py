@@ -37,8 +37,8 @@
 #
 #  NFR-02 | Password Hashing
 #         Design: D-SEC-04
-#         Impl:   Password stored/compared in users table (plain — upgrade to
-#                 bcrypt for production)
+#         Impl:   bcrypt.hashpw on register/change-password;
+#                 bcrypt.checkpw on login — passwords never stored in plain text
 #
 #  NFR-03 | Data Integrity & Constraints
 #         Design: D-DB-04
@@ -72,6 +72,7 @@ import os
 from werkzeug.utils import secure_filename
 import bcrypt
 import re
+from datetime import date, datetime
 
 app = Flask(__name__)
 app.secret_key = "smart_leave_secret_key"
@@ -201,8 +202,27 @@ def dashboard_redirect():
     else:
         return redirect('/user/dashboard')
 
-# ── Helper: wrap a response with no-cache headers ────────────────────────────
-# (handled globally by after_request hook above)
+# ── Role guard helpers — defined here so all routes can use them ──────────────
+def faculty_required():
+    return 'user_id' in session and session.get('role') == 'Faculty'
+
+def admin_required():
+    return 'user_id' in session and session.get('role') == 'Admin'
+
+def user_required():
+    return 'user_id' in session and session.get('role') == 'Student'
+
+def role_guard(required_role):
+    """
+    RTM: FR-06 (D-SEC-02) — RBAC: enforces role-based route access.
+    RTM: NFR-05 (D-ARCH-05) — Error Handling: redirects instead of crashing.
+    A Student cannot access /faculty or /admin routes and vice versa.
+    """
+    if 'user_id' not in session:
+        return redirect('/login')
+    if session.get('role') != required_role:
+        return dashboard_redirect()
+    return None
 
 # ── Home ──────────────────────────────────────────────────────────────────────
 @app.route('/')
@@ -317,8 +337,8 @@ def user_dashboard():
 # RTM: NFR-03 (D-DB-04) — Data Integrity: date order validation, required fields
 # RTM: NFR-05 (D-ARCH-05) — Error Handling: inline errors for invalid input
 def apply_leave():
-    if 'user_id' not in session:
-        return redirect('/login')
+    guard = role_guard('Student')
+    if guard: return guard
 
     if request.method == 'POST':
         uid = session['user_id']
@@ -328,20 +348,15 @@ def apply_leave():
         reason     = request.form.get('reason', '').strip()
 
         if not leave_type or not from_date or not to_date or not reason:
-            # §5.1 Performance: fail fast — no DB hit for invalid input
-            # §2.2.7 / §5.2 Safety: display appropriate error, never crash
             return render_template('user Dashboard/apply_leave.html',
                                    error="All fields are required.")
 
         # Validate: from_date must not be in the past
-        from datetime import date
         today = date.today().isoformat()
         if from_date < today:
             return render_template('user Dashboard/apply_leave.html',
                                    error="Leave cannot be applied for past dates. Please select today or a future date.")
 
-        # Validate date order
-        # §2.2.7 Error Handling: meaningful error for invalid date range
         if from_date > to_date:
             return render_template('user Dashboard/apply_leave.html',
                                    error="'From Date' cannot be after 'To Date'.")
@@ -353,8 +368,6 @@ def apply_leave():
             if not allowed_file(file.filename):
                 return render_template('user Dashboard/apply_leave.html',
                                        error="Only PDF files are allowed for supporting documents.")
-            # Save as uid_timestamp_originalname.pdf to avoid collisions
-            from datetime import datetime
             safe_name = secure_filename(file.filename)
             doc_filename = f"{uid}_{datetime.now().strftime('%Y%m%d%H%M%S')}_{safe_name}"
             file.save(os.path.join(UPLOAD_FOLDER, doc_filename))
@@ -373,8 +386,8 @@ def apply_leave():
 # RTM: FR-04 (D-DB-02) — Leave Balance: shows all leave records with statuses
 # RTM: FR-05 (D-ARCH-03, D-DB-03) — Reporting: user-specific leave history
 def leave_history():
-    if 'user_id' not in session:
-        return redirect('/login')
+    guard = role_guard('Student')
+    if guard: return guard
 
     q("""SELECT id, leave_type, from_date, to_date,
                 faculty_status, admin_status, status, document
@@ -386,8 +399,8 @@ def leave_history():
 # RTM: FR-03 (D-ARCH-02) — Approve/Reject: student views pipeline result
 # RTM: FR-04 (D-DB-02)   — Leave Balance: final status + faculty/admin remarks
 def leave_status():
-    if 'user_id' not in session:
-        return redirect('/login')
+    guard = role_guard('Student')
+    if guard: return guard
 
     q("""SELECT id, leave_type, from_date, to_date, status,
                 faculty_name, faculty_status, faculty_remark,
@@ -399,11 +412,10 @@ def leave_status():
 
 @app.route('/user/profile', methods=['GET', 'POST'])
 # RTM: FR-01 (D-ARCH-01, D-SEC-01) — Authentication: password change with verification
-# RTM: NFR-02 (D-SEC-04) — Password: current password verified before update
+# RTM: NFR-02 (D-SEC-04) — Password: bcrypt verified before update
 def user_profile():
-    if 'user_id' not in session:
-        return redirect('/login')
-
+    guard = role_guard('Student')
+    if guard: return guard
     uid = session['user_id']
 
     if request.method == 'POST':
@@ -467,27 +479,6 @@ def user_profile():
 # RTM: FR-03 (D-ARCH-02) — Approve/Reject Leave: faculty_approve/reject_leave()
 # RTM: FR-06 (D-SEC-02)  — RBAC: faculty_required() enforces Faculty-only access
 # ══════════════════════════════════════════════════════════════════════════════
-
-def faculty_required():
-    return 'user_id' in session and session.get('role') == 'Faculty'
-
-def admin_required():
-    return 'user_id' in session and session.get('role') == 'Admin'
-
-def user_required():
-    return 'user_id' in session and session.get('role') == 'Student'
-
-def role_guard(required_role):
-    """
-    RTM: FR-06 (D-SEC-02) — RBAC: enforces role-based route access.
-    RTM: NFR-05 (D-ARCH-05) — Error Handling: redirects instead of crashing.
-    A Student cannot access /faculty or /admin routes and vice versa.
-    """
-    if 'user_id' not in session:
-        return redirect('/login')
-    if session.get('role') != required_role:
-        return dashboard_redirect()   # send them to their own dashboard
-    return None
 
 @app.route('/faculty/dashboard')
 # RTM: FR-05 (D-ARCH-03, D-DB-03) — Reporting: faculty sees pending/approved/rejected counts

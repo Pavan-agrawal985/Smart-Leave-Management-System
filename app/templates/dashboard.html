@@ -1,0 +1,9 @@
+{% extends "base.html" %}
+{% block title %}Dashboard - LeaveOk{% endblock %}
+{% block content %}
+<div class="card">
+  <h2>Welcome, {{ current_user.name }}</h2>
+  <p>Role: <b>{{ current_user.role }}</b></p>
+  <p>Organization: <b>{{ org.name }}</b> ({{ org.org_type }})</p>
+</div>
+{% endblock %}

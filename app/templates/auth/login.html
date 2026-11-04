@@ -1,0 +1,19 @@
+{% extends "base.html" %}
+{% block title %}Login - LeaveOk{% endblock %}
+{% block content %}
+<div class="card">
+  <h2>Login</h2>
+  <form method="POST">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+    <label>Email</label>
+    <input type="email" name="email" required>
+
+    <label>Password</label>
+    <input type="password" name="password" required>
+
+    <button type="submit">Login</button>
+  </form>
+  <p class="muted">New organization? <a href="{{ url_for('auth.register') }}">Sign up</a></p>
+</div>
+{% endblock %}

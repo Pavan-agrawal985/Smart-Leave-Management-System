@@ -1,0 +1,29 @@
+{% extends "base.html" %}
+{% block title %}Apply for leave - LeaveOk{% endblock %}
+{% block wrap %}narrow{% endblock %}
+{% block content %}
+<div class="card">
+  <h2>Apply for leave</h2>
+  <form method="POST">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+    <label>Leave type</label>
+    <select name="leave_type_id" required>
+      {% for t in types %}
+        <option value="{{ t.id }}">{{ t.name }} ({{ t.yearly_quota }} days/year)</option>
+      {% endfor %}
+    </select>
+
+    <label>From</label>
+    <input type="date" name="from_date" required>
+
+    <label>To</label>
+    <input type="date" name="to_date" required>
+
+    <label>Reason</label>
+    <input name="reason" placeholder="Optional">
+
+    <button type="submit">Submit request</button>
+  </form>
+</div>
+{% endblock %}

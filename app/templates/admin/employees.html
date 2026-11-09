@@ -1,0 +1,51 @@
+{% extends "base.html" %}
+{% block title %}Employees - LeaveOk{% endblock %}
+{% block wrap %}wide{% endblock %}
+{% block content %}
+<div class="card">
+  <h2>Add employee</h2>
+  <form method="POST">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+    <label>Name</label>
+    <input name="name" required>
+
+    <label>Email</label>
+    <input type="email" name="email" required>
+
+    <label>Temporary password (minimum 8 characters)</label>
+    <input type="password" name="password" required minlength="8">
+
+    <label>Role</label>
+    <select name="role">
+      <option value="employee">Employee</option>
+      <option value="manager">Manager</option>
+    </select>
+
+    <label>Reports to</label>
+    <select name="manager_id">
+      <option value="">- none -</option>
+      {% for m in managers %}
+        <option value="{{ m.id }}">{{ m.name }} ({{ m.role }})</option>
+      {% endfor %}
+    </select>
+
+    <button type="submit">Add employee</button>
+  </form>
+</div>
+
+<div class="card" style="margin-top:20px">
+  <h2>People in your organization</h2>
+  <table>
+    <tr><th>Name</th><th>Email</th><th>Role</th><th>Reports to</th></tr>
+    {% for u in users %}
+    <tr>
+      <td>{{ u.name }}</td>
+      <td>{{ u.email }}</td>
+      <td>{{ u.role }}</td>
+      <td>{{ by_id[u.manager_id].name if u.manager_id else '-' }}</td>
+    </tr>
+    {% endfor %}
+  </table>
+</div>
+{% endblock %}

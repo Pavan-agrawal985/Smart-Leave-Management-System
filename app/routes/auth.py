@@ -2,6 +2,7 @@ from flask import Blueprint, render_template, request, redirect, url_for, flash
 from flask_login import login_user, logout_user, login_required, current_user
 from app.extensions import db
 from app.models import Organization, User
+from app.services.org_templates import seed_leave_types
 
 bp = Blueprint("auth", __name__)
 
@@ -30,7 +31,8 @@ def register():
 
         org = Organization(name=org_name, org_type=org_type)
         db.session.add(org)
-        db.session.flush()  # gives org an id before we save the user
+        db.session.flush() # gives org an id before we save the user
+        seed_leave_types(org) 
 
         user = User(organization_id=org.id, name=name, email=email, role="org_admin")
         user.set_password(password)

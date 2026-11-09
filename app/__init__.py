@@ -14,9 +14,11 @@ def create_app():
     login_manager.login_view = "auth.login"
 
     from app import models  # noqa: F401
-    from app.routes import auth, main
+    from app.routes import auth, main, leave, admin
     app.register_blueprint(auth.bp)
     app.register_blueprint(main.bp)
+    app.register_blueprint(leave.bp)
+    app.register_blueprint(admin.bp)
 
     @app.route("/health")
     def health():

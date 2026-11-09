@@ -11,8 +11,16 @@
     <a class="brand" href="/">LeaveOk</a>
     <div class="nav-links">
       {% if current_user.is_authenticated %}
-        <span>{{ current_user.name }}</span>
-        <a href="{{ url_for('auth.logout') }}">Logout</a>
+        <a href="{{ url_for('main.dashboard') }}">Dashboard</a>
+        <a href="{{ url_for('leave.apply') }}">Apply</a>
+        <a href="{{ url_for('leave.my') }}">My leaves</a>
+        {% if current_user.role in ('org_admin', 'manager') %}
+          <a href="{{ url_for('leave.approvals') }}">Approvals</a>
+        {% endif %}
+        {% if current_user.role == 'org_admin' %}
+          <a href="{{ url_for('admin.employees') }}">Employees</a>
+        {% endif %}
+        <a href="{{ url_for('auth.logout') }}">Logout ({{ current_user.name }})</a>
       {% else %}
         <a href="{{ url_for('auth.login') }}">Login</a>
         <a href="{{ url_for('auth.register') }}">Sign up</a>
@@ -20,10 +28,10 @@
     </div>
   </nav>
 
-  <main class="container">
-    {% with messages = get_flashed_messages() %}
-      {% for m in messages %}
-        <div class="flash">{{ m }}</div>
+  <main class="container {% block wrap %}{% endblock %}">
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% for cat, m in messages %}
+        <div class="flash {{ cat }}">{{ m }}</div>
       {% endfor %}
     {% endwith %}
     {% block content %}{% endblock %}

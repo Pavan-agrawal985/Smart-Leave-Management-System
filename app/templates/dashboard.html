@@ -1,9 +1,28 @@
 {% extends "base.html" %}
 {% block title %}Dashboard - LeaveOk{% endblock %}
+{% block wrap %}wide{% endblock %}
 {% block content %}
 <div class="card">
   <h2>Welcome, {{ current_user.name }}</h2>
-  <p>Role: <b>{{ current_user.role }}</b></p>
-  <p>Organization: <b>{{ org.name }}</b> ({{ org.org_type }})</p>
+  <p>Role: <b>{{ current_user.role }}</b> &nbsp;|&nbsp; Organization: <b>{{ org.name }}</b> ({{ org.org_type }})</p>
+  {% if pending_count %}
+    <p><b>{{ pending_count }}</b> request(s) waiting for your approval.</p>
+  {% endif %}
+  <div class="links">
+    <a href="{{ url_for('leave.apply') }}">Apply for leave</a>
+    <a href="{{ url_for('leave.my') }}">My leaves</a>
+  </div>
+</div>
+
+<div class="card" style="margin-top:20px">
+  <h2>My leave balance (this year)</h2>
+  <table>
+    <tr><th>Leave type</th><th>Quota</th><th>Used</th><th>Left</th></tr>
+    {% for b in balances %}
+    <tr>
+      <td>{{ b.type.name }}</td><td>{{ b.quota }}</td><td>{{ b.used }}</td><td><b>{{ b.left }}</b></td>
+    </tr>
+    {% endfor %}
+  </table>
 </div>
 {% endblock %}

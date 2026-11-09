@@ -1,0 +1,24 @@
+{% extends "base.html" %}
+{% block title %}My leaves - LeaveOk{% endblock %}
+{% block wrap %}wide{% endblock %}
+{% block content %}
+<div class="card">
+  <h2>My leave requests</h2>
+  {% if requests %}
+  <table>
+    <tr><th>Type</th><th>From</th><th>To</th><th>Days</th><th>Status</th></tr>
+    {% for r in requests %}
+    <tr>
+      <td>{{ r.leave_type.name }}</td>
+      <td>{{ r.from_date.strftime('%d %b %Y') }}</td>
+      <td>{{ r.to_date.strftime('%d %b %Y') }}</td>
+      <td>{{ r.days }}</td>
+      <td><span class="badge {{ r.status }}">{{ r.status }}</span></td>
+    </tr>
+    {% endfor %}
+  </table>
+  {% else %}
+  <p class="muted">No requests yet.</p>
+  {% endif %}
+</div>
+{% endblock %}

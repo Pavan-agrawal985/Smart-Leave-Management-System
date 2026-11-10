@@ -1,8 +1,9 @@
 from functools import wraps
 from flask import Blueprint, render_template, request, redirect, url_for, flash, abort
 from flask_login import login_required, current_user
+from datetime import datetime
 from app.extensions import db
-from app.models import User, LeaveType, LeaveRequest
+from app.models import User, LeaveType, LeaveRequest, Holiday, Organization
 
 bp = Blueprint("admin", __name__, url_prefix="/admin")
 
@@ -152,3 +153,60 @@ def delete_leave_type(type_id):
         db.session.commit()
         flash("Leave type deleted.", "ok")
     return redirect(url_for("admin.leave_types"))
+
+
+DAYS = [(0, "Mon"), (1, "Tue"), (2, "Wed"), (3, "Thu"), (4, "Fri"), (5, "Sat"), (6, "Sun")]
+
+
+@bp.route("/holidays", methods=["GET", "POST"])
+@login_required
+@org_admin_required
+def holidays():
+    org_id = current_user.organization_id
+
+    if request.method == "POST":
+        name = request.form.get("name", "").strip()
+        try:
+            day = datetime.strptime(request.form.get("date", ""), "%Y-%m-%d").date()
+        except ValueError:
+            day = None
+
+        if not name or not day:
+            flash("Holiday name and a valid date are required.")
+        elif Holiday.query.filter_by(organization_id=org_id, holiday_date=day).first():
+            flash("A holiday already exists on this date.")
+        else:
+            db.session.add(Holiday(organization_id=org_id, name=name, holiday_date=day))
+            db.session.commit()
+            flash("Holiday added.", "ok")
+        return redirect(url_for("admin.holidays"))
+
+    org = db.session.get(Organization, org_id)
+    weekend = {int(x) for x in (org.weekend_days or "").split(",") if x.strip() != ""}
+    items = Holiday.query.filter_by(organization_id=org_id).order_by(Holiday.holiday_date).all()
+    return render_template("admin/holidays.html", holidays=items, days=DAYS, weekend=weekend)
+
+
+@bp.route("/holidays/weekend", methods=["POST"])
+@login_required
+@org_admin_required
+def set_weekend():
+    chosen = sorted({int(x) for x in request.form.getlist("weekend") if x.isdigit() and 0 <= int(x) <= 6})
+    org = db.session.get(Organization, current_user.organization_id)
+    org.weekend_days = ",".join(str(x) for x in chosen)
+    db.session.commit()
+    flash("Weekly offs saved.", "ok")
+    return redirect(url_for("admin.holidays"))
+
+
+@bp.route("/holidays/<int:holiday_id>/delete", methods=["POST"])
+@login_required
+@org_admin_required
+def delete_holiday(holiday_id):
+    h = Holiday.query.filter_by(
+        id=holiday_id, organization_id=current_user.organization_id
+    ).first_or_404()
+    db.session.delete(h)
+    db.session.commit()
+    flash("Holiday deleted.", "ok")
+    return redirect(url_for("admin.holidays"))

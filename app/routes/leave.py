@@ -2,9 +2,9 @@ from datetime import datetime
 from flask import Blueprint, render_template, request, redirect, url_for, flash, abort
 from flask_login import login_required, current_user
 from app.extensions import db
-from app.models import LeaveType, LeaveRequest
+from app.models import LeaveType, LeaveRequest, Organization
 from app.services.leave_service import (
-    calc_days, used_days, has_overlap, can_approve, pending_for,
+    working_days, used_days, has_overlap, can_approve, pending_for,
 )
 
 bp = Blueprint("leave", __name__, url_prefix="/leave")
@@ -37,28 +37,36 @@ def apply():
             flash("Invalid leave type.")
         elif to_date < from_date:
             flash("End date cannot be before start date.")
+        elif (to_date - from_date).days > 365:
+            flash("A leave request cannot be longer than one year.")
         elif has_overlap(current_user.id, from_date, to_date):
             flash("You already have a leave request in these dates.")
         else:
-            days = calc_days(from_date, to_date)
-            left = leave_type.yearly_quota - used_days(current_user.id, leave_type.id, from_date.year)
-            if days > left:
-                flash(f"Not enough balance. You have {left} day(s) left for {leave_type.name}.")
+            org = db.session.get(Organization, current_user.organization_id)
+            days = working_days(org, from_date, to_date)
+            if days == 0:
+                flash("These dates are all weekly offs or holidays, so no leave is needed.")
             else:
-                db.session.add(
-                    LeaveRequest(
-                        organization_id=current_user.organization_id,
-                        user_id=current_user.id,
-                        leave_type_id=leave_type.id,
-                        from_date=from_date,
-                        to_date=to_date,
-                        days=days,
-                        reason=reason,
-                    )
+                left = leave_type.yearly_quota - used_days(
+                    current_user.id, leave_type.id, from_date.year
                 )
-                db.session.commit()
-                flash("Leave request submitted.", "ok")
-                return redirect(url_for("leave.my"))
+                if days > left:
+                    flash(f"Not enough balance. You have {left} day(s) left for {leave_type.name}.")
+                else:
+                    db.session.add(
+                        LeaveRequest(
+                            organization_id=current_user.organization_id,
+                            user_id=current_user.id,
+                            leave_type_id=leave_type.id,
+                            from_date=from_date,
+                            to_date=to_date,
+                            days=days,
+                            reason=reason,
+                        )
+                    )
+                    db.session.commit()
+                    flash(f"Leave request submitted ({days} working day(s)).", "ok")
+                    return redirect(url_for("leave.my"))
 
     return render_template("leave/apply.html", types=types)
 

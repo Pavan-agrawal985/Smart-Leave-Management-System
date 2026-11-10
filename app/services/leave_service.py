@@ -1,11 +1,30 @@
-from datetime import date
+from datetime import date, timedelta
 from sqlalchemy import func
 from app.extensions import db
-from app.models import LeaveType, LeaveRequest, User
+from app.models import LeaveType, LeaveRequest, User, Holiday
 
 
-def calc_days(from_date, to_date):
-    return (to_date - from_date).days + 1
+def weekend_set(org):
+    return {int(x) for x in (org.weekend_days or "").split(",") if x.strip() != ""}
+
+
+def working_days(org, from_date, to_date):
+    weekend = weekend_set(org)
+    holidays = {
+        h.holiday_date
+        for h in Holiday.query.filter(
+            Holiday.organization_id == org.id,
+            Holiday.holiday_date >= from_date,
+            Holiday.holiday_date <= to_date,
+        )
+    }
+    total = 0
+    day = from_date
+    while day <= to_date:
+        if day.weekday() not in weekend and day not in holidays:
+            total += 1
+        day += timedelta(days=1)
+    return total
 
 
 def used_days(user_id, leave_type_id, year):

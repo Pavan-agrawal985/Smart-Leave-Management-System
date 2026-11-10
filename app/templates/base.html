@@ -20,6 +20,7 @@
         {% if current_user.role == 'org_admin' %}
           <a href="{{ url_for('admin.employees') }}">Employees</a>
           <a href="{{ url_for('admin.leave_types') }}">Leave types</a>
+          <a href="{{ url_for('admin.holidays') }}">Holidays</a>
         {% endif %}
         <a href="{{ url_for('auth.logout') }}">Logout ({{ current_user.name }})</a>
       {% else %}

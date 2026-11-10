@@ -1,0 +1,52 @@
+{% extends "base.html" %}
+{% block title %}Holidays - LeaveOk{% endblock %}
+{% block wrap %}wide{% endblock %}
+{% block content %}
+<div class="card">
+  <h2>Weekly offs</h2>
+  <form method="POST" action="{{ url_for('admin.set_weekend') }}">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    <div class="days">
+      {% for num, label in days %}
+        <label class="check"><input type="checkbox" name="weekend" value="{{ num }}" {% if num in weekend %}checked{% endif %}> {{ label }}</label>
+      {% endfor %}
+    </div>
+    <button type="submit">Save weekly offs</button>
+  </form>
+</div>
+
+<div class="card" style="margin-top:20px">
+  <h2>Add holiday</h2>
+  <form method="POST">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    <label>Holiday name</label>
+    <input name="name" required>
+    <label>Date</label>
+    <input type="date" name="date" required>
+    <button type="submit">Add holiday</button>
+  </form>
+</div>
+
+<div class="card" style="margin-top:20px">
+  <h2>Holiday list</h2>
+  {% if holidays %}
+  <table>
+    <tr><th>Date</th><th>Name</th><th></th></tr>
+    {% for h in holidays %}
+    <tr>
+      <td>{{ h.holiday_date.strftime('%d %b %Y (%a)') }}</td>
+      <td>{{ h.name }}</td>
+      <td>
+        <form method="POST" action="{{ url_for('admin.delete_holiday', holiday_id=h.id) }}" class="inline">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+          <button class="btn-sm no">Delete</button>
+        </form>
+      </td>
+    </tr>
+    {% endfor %}
+  </table>
+  {% else %}
+  <p class="muted">No holidays added yet.</p>
+  {% endif %}
+</div>
+{% endblock %}

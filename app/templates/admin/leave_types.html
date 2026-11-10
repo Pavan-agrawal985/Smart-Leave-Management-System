@@ -1,0 +1,47 @@
+{% extends "base.html" %}
+{% block title %}Leave types - LeaveOk{% endblock %}
+{% block wrap %}wide{% endblock %}
+{% block content %}
+<div class="card">
+  <h2>Add leave type</h2>
+  <form method="POST">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+    <label>Name</label>
+    <input name="name" required>
+
+    <label>Days per year</label>
+    <input type="number" name="yearly_quota" min="0" max="365" value="12" required>
+
+    <label class="check" style="margin-top:14px">
+      <input type="checkbox" name="carry_forward"> Carry forward unused days
+    </label>
+
+    <button type="submit">Add leave type</button>
+  </form>
+</div>
+
+<div class="card" style="margin-top:20px">
+  <h2>Your leave types</h2>
+  {% for t in types %}
+  <div class="type-row">
+    <form method="POST" action="{{ url_for('admin.edit_leave_type', type_id=t.id) }}" class="type-edit">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <input name="name" value="{{ t.name }}" required>
+      <input type="number" name="yearly_quota" min="0" max="365" value="{{ t.yearly_quota }}" required>
+      <label class="check">
+        <input type="checkbox" name="carry_forward" {% if t.carry_forward %}checked{% endif %}> Carry forward
+      </label>
+      <button class="btn-sm ok">Save</button>
+    </form>
+    <form method="POST" action="{{ url_for('admin.delete_leave_type', type_id=t.id) }}"
+          onsubmit="return confirm('Delete this leave type?')">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <button class="btn-sm no">Delete</button>
+    </form>
+  </div>
+  {% else %}
+  <p class="muted">No leave types yet.</p>
+  {% endfor %}
+</div>
+{% endblock %}

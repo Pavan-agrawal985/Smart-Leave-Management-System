@@ -168,3 +168,48 @@ form.inline {
     border-radius: 8px;
     text-decoration: none;
 }
+
+.type-row {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+    flex-wrap: wrap;
+    padding: 10px 0;
+    border-bottom: 1px solid #e2e8f0;
+}
+
+.type-edit {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+    flex-wrap: wrap;
+    flex: 1;
+}
+
+.type-edit input[name="name"] {
+    flex: 2;
+    min-width: 140px;
+}
+
+.type-edit input[type="number"] {
+    flex: 1;
+    min-width: 80px;
+}
+
+.type-row button {
+    margin-top: 0;
+}
+
+label.check {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-weight: 400;
+    margin: 0;
+    white-space: nowrap;
+}
+
+label.check input {
+    width: auto;
+}
+

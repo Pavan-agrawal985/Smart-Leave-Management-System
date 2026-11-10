@@ -18,7 +18,7 @@ A multi-organization leave management system. Each organization (school, college
 | Part | Tool |
 |---|---|
 | Backend | Flask |
-| Database | MySQL with SQLAlchemy and Flask-Migrate |
+| Database | Postgres (Neon) with SQLAlchemy and Flask-Migrate |
 | Login | Flask-Login, bcrypt |
 | Forms and security | Flask-WTF (CSRF) |
 | Frontend | Jinja templates, plain CSS |
@@ -59,21 +59,15 @@ venv\Scripts\activate          # Windows
 python -m pip install -r requirements.txt
 ```
 
-**3. Create the database** (MySQL 8)
-
-```sql
-CREATE DATABASE leaveok CHARACTER SET utf8mb4;
-```
+**3. Create a free Postgres database** at [neon.com](https://neon.com) and copy its connection string.
 
 **4. Create a `.env` file** in the project root
 
 ```
 SECRET_KEY=any-long-random-text
-DATABASE_URL=mysql+pymysql://USER:PASSWORD@localhost/leaveok
+DATABASE_URL=postgresql+psycopg2://USER:PASSWORD@HOST/neondb?sslmode=require
 FLASK_APP=run.py
 ```
-
-If your password has special characters such as `@` or `#`, URL-encode it first.
 
 **5. Create the tables and start the app**
 
@@ -106,3 +100,10 @@ Open http://127.0.0.1:5000 and sign up your first organization.
 - [ ] Team leave calendar and CSV reports
 - [ ] Automated tests for data isolation between organizations
 - [ ] Live deployment (VPS + Nginx + Gunicorn + Cloudflare) with CI/CD
+
+
+## Live demo
+
+https://smart-leave-management-system-lemon.vercel.app/
+
+Hosted on Vercel with a Neon Postgres database. Pushing to `main` redeploys automatically.

@@ -1,6 +1,7 @@
 from flask import Flask
 from config import Config
 from app.extensions import db, migrate, csrf, login_manager
+from flask_compress import Compress
 
 
 def create_app():
@@ -12,6 +13,7 @@ def create_app():
     csrf.init_app(app)
     login_manager.init_app(app)
     login_manager.login_view = "auth.login"
+    Compress(app)
 
     from app import models  # noqa: F401
     from app.routes import auth, main, leave, admin

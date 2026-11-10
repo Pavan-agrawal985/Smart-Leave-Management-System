@@ -1,0 +1,32 @@
+{% extends "base.html" %}
+{% block title %}Team calendar - LeaveOk{% endblock %}
+{% block wrap %}wide{% endblock %}
+{% block content %}
+<div class="card">
+  <div class="cal-head">
+    <a href="{{ url_for('leave.team_calendar', month=prev) }}">&larr; Prev</a>
+    <h2>{{ month_name }} {{ year }}</h2>
+    <a href="{{ url_for('leave.team_calendar', month=nxt) }}">Next &rarr;</a>
+  </div>
+
+  <div class="cal-wrap">
+    <table class="cal">
+      <tr>{% for d in ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'] %}<th>{{ d }}</th>{% endfor %}</tr>
+      {% for week in weeks %}
+      <tr>
+        {% for day in week %}
+        <td class="{% if day.month != month %}other{% endif %} {% if day.weekday() in weekend %}off{% endif %} {% if day in holidays %}hol{% endif %} {% if day == today %}today{% endif %}">
+          <div class="num">{{ day.day }}</div>
+          {% if day in holidays %}<div class="hname">{{ holidays[day] }}</div>{% endif %}
+          {% for name, status in by_day.get(day, []) %}
+            <div class="chip {{ status }}">{{ name }}</div>
+          {% endfor %}
+        </td>
+        {% endfor %}
+      </tr>
+      {% endfor %}
+    </table>
+  </div>
+  <p class="muted">Green = approved, yellow = pending. Only names and dates are shown.</p>
+</div>
+{% endblock %}

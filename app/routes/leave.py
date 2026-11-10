@@ -1,4 +1,5 @@
-from datetime import datetime
+import calendar
+from datetime import datetime, date
 from flask import Blueprint, render_template, request, redirect, url_for, flash, abort
 from flask_login import login_required, current_user
 from app.extensions import db
@@ -6,6 +7,8 @@ from app.models import LeaveType, LeaveRequest, Organization
 from app.services.leave_service import (
     working_days, used_days, has_overlap, can_approve, pending_for,
 )
+from app.services.email_service import notify_new_request, notify_decision
+from app.services.calendar_service import month_data
 
 bp = Blueprint("leave", __name__, url_prefix="/leave")
 
@@ -53,18 +56,18 @@ def apply():
                 if days > left:
                     flash(f"Not enough balance. You have {left} day(s) left for {leave_type.name}.")
                 else:
-                    db.session.add(
-                        LeaveRequest(
-                            organization_id=current_user.organization_id,
-                            user_id=current_user.id,
-                            leave_type_id=leave_type.id,
-                            from_date=from_date,
-                            to_date=to_date,
-                            days=days,
-                            reason=reason,
-                        )
+                    new_req = LeaveRequest(
+                        organization_id=current_user.organization_id,
+                        user_id=current_user.id,
+                        leave_type_id=leave_type.id,
+                        from_date=from_date,
+                        to_date=to_date,
+                        days=days,
+                        reason=reason,
                     )
+                    db.session.add(new_req)
                     db.session.commit()
+                    notify_new_request(new_req)
                     flash(f"Leave request submitted ({days} working day(s)).", "ok")
                     return redirect(url_for("leave.my"))
 
@@ -102,5 +105,33 @@ def decide(req_id, action):
         abort(403)
     req.status = "approved" if action == "approve" else "rejected"
     db.session.commit()
+    notify_decision(req)
     flash(f"Request {req.status}.", "ok")
     return redirect(url_for("leave.approvals"))
+
+
+@bp.route("/calendar")
+@login_required
+def team_calendar():
+    today = date.today()
+    try:
+        year, month = (int(x) for x in request.args.get("month", "").split("-"))
+        date(year, month, 1)
+    except ValueError:
+        year, month = today.year, today.month
+
+    prev_y, prev_m = (year - 1, 12) if month == 1 else (year, month - 1)
+    next_y, next_m = (year + 1, 1) if month == 12 else (year, month + 1)
+
+    org = db.session.get(Organization, current_user.organization_id)
+    data = month_data(current_user, org, year, month)
+    return render_template(
+        "leave/calendar.html",
+        year=year,
+        month=month,
+        month_name=calendar.month_name[month],
+        prev=f"{prev_y}-{prev_m:02d}",
+        nxt=f"{next_y}-{next_m:02d}",
+        today=today,
+        **data,
+    )

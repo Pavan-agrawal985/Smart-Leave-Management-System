@@ -14,6 +14,7 @@
         <a href="{{ url_for('main.dashboard') }}">Dashboard</a>
         <a href="{{ url_for('leave.apply') }}">Apply</a>
         <a href="{{ url_for('leave.my') }}">My leaves</a>
+        <a href="{{ url_for('leave.team_calendar') }}">Calendar</a>
         {% if current_user.role in ('org_admin', 'manager') %}
           <a href="{{ url_for('leave.approvals') }}">Approvals</a>
         {% endif %}

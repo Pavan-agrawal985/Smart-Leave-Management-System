@@ -14,6 +14,13 @@
 
     <button type="submit">Login</button>
   </form>
+  {% if unverified_email %}
+  <form method="POST" action="{{ url_for('auth.resend_verification') }}">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    <input type="hidden" name="email" value="{{ unverified_email }}">
+    <button type="submit">Resend verification email</button>
+  </form>
+  {% endif %}
   <p class="muted">New organization? <a href="{{ url_for('auth.register') }}">Sign up</a></p>
 </div>
 {% endblock %}

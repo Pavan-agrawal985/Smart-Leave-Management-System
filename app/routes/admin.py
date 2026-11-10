@@ -4,6 +4,8 @@ from flask_login import login_required, current_user
 from datetime import datetime
 from app.extensions import db
 from app.models import User, LeaveType, LeaveRequest, Holiday, Organization
+from app.services.validation import check_email, check_password
+from app.services.email_service import send_verification_email
 
 bp = Blueprint("admin", __name__, url_prefix="/admin")
 
@@ -37,10 +39,15 @@ def employees():
         if manager_id.isdigit():
             manager = User.query.filter_by(id=int(manager_id), organization_id=org_id).first()
 
-        if not (name and email and password):
+        email, email_error = check_email(email)
+        password_error = check_password(password)
+
+        if not (name and password):
             flash("Name, email and password are required.")
-        elif len(password) < 8:
-            flash("Password must be at least 8 characters.")
+        elif email_error:
+            flash(email_error)
+        elif password_error:
+            flash(password_error)
         elif User.query.filter_by(email=email).first():
             flash("Email already registered.")
         else:
@@ -49,12 +56,16 @@ def employees():
                 name=name,
                 email=email,
                 role=role,
+                email_verified=False,
                 manager_id=manager.id if manager else None,
             )
             user.set_password(password)
             db.session.add(user)
             db.session.commit()
-            flash("Employee added.", "ok")
+            if send_verification_email(user):
+                flash("Employee added. A verification link was emailed to them.", "ok")
+            else:
+                flash("Employee added, but the verification email failed. They can press 'Resend verification email' on the login page.", "ok")
             return redirect(url_for("admin.employees"))
 
     users = User.query.filter_by(organization_id=org_id).order_by(User.name).all()

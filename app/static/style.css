@@ -215,3 +215,19 @@ label.check input {
 
 
 .days { display: flex; gap: 16px; flex-wrap: wrap; margin-top: 8px; }
+
+.cal-head { display: flex; justify-content: space-between; align-items: center; }
+.cal-head a { text-decoration: none; color: #2563eb; }
+.cal-wrap { overflow-x: auto; }
+table.cal { table-layout: fixed; min-width: 640px; }
+table.cal th, table.cal td { border: 1px solid #e2e8f0; vertical-align: top; height: 92px; padding: 4px 6px; }
+table.cal td.other { background: #f8fafc; color: #94a3b8; }
+table.cal td.off { background: #f1f5f9; }
+table.cal td.hol { background: #fff7ed; }
+table.cal td.today { outline: 2px solid #2563eb; outline-offset: -2px; }
+.num { font-weight: 600; font-size: 13px; }
+.hname { font-size: 11px; color: #c2410c; }
+.chip { margin-top: 3px; padding: 2px 6px; border-radius: 6px; font-size: 12px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.chip.approved { background: #16a34a; color: #fff; }
+.chip.pending { background: #fde68a; color: #92400e; }
+

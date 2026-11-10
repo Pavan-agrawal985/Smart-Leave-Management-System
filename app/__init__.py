@@ -2,11 +2,12 @@ from flask import Flask
 from config import Config
 from app.extensions import db, migrate, csrf, login_manager
 from flask_compress import Compress
-
+from werkzeug.middleware.proxy_fix import ProxyFix
 
 def create_app():
     app = Flask(__name__)
     app.config.from_object(Config)
+    app.wsgi_app = ProxyFix(app.wsgi_app, x_proto=1, x_host=1)
 
     db.init_app(app)
     migrate.init_app(app, db)

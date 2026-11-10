@@ -19,6 +19,9 @@ class User(UserMixin, db.Model):
     password_hash = db.Column(db.String(255), nullable=False)
     role = db.Column(db.String(20), default="employee")  # org_admin, manager, employee
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    email_verified = db.Column(
+        db.Boolean, nullable=False, default=False, server_default=db.text("true")
+    )
 
     def set_password(self, plain):
         self.password_hash = bcrypt.hashpw(

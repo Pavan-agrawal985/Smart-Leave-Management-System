@@ -1,12 +1,20 @@
+import os
 from flask import Blueprint, render_template, request, redirect, url_for, flash
 from flask_login import login_user, logout_user, login_required, current_user
 from app.extensions import db
 from app.models import Organization, User
 from app.services.org_templates import seed_leave_types
 from app.services.validation import check_email, check_password
-from app.services.email_service import send_verification_email, read_verification_token
+from app.services.email_service import (
+    send_verification_email, read_verification_token, can_send_verification,
+)
 
 bp = Blueprint("auth", __name__)
+
+
+def _is_owner_email(email):
+    owner = os.environ.get("OWNER_EMAIL", "").strip().lower()
+    return bool(owner) and email == owner
 
 
 @bp.route("/register", methods=["GET", "POST"])
@@ -38,7 +46,12 @@ def register():
             flash("Email already registered.")
             return render_template("auth/register.html")
 
-        org = Organization(name=org_name, org_type=org_type)
+        is_owner = _is_owner_email(email)
+        org = Organization(
+            name=org_name,
+            org_type=org_type,
+            status="active" if is_owner else "pending",
+        )
         db.session.add(org)
         db.session.flush()  # gives org an id before we save the user
         seed_leave_types(org)
@@ -54,10 +67,15 @@ def register():
         db.session.add(user)
         db.session.commit()
 
-        if send_verification_email(user):
-            flash(f"Account created. We sent a verification link to {email}. Click it, then log in.", "ok")
+        send_verification_email(user)
+        if is_owner:
+            flash(f"Account created. Check {email} for the verification link, then log in.", "ok")
         else:
-            flash("Account created, but the verification email could not be sent. Try to log in and press 'Resend verification email'.", "ok")
+            flash(
+                f"Account created. Click the verification link sent to {email}. "
+                "The LeaveOk team will then review and approve your organization.",
+                "ok",
+            )
         return redirect(url_for("auth.login"))
 
     return render_template("auth/register.html")
@@ -77,6 +95,15 @@ def login():
             if not user.email_verified:
                 flash("Please verify your email first. Check your inbox and spam folder.")
                 return render_template("auth/login.html", unverified_email=user.email)
+
+            org = db.session.get(Organization, user.organization_id)
+            if org.status == "pending":
+                flash("Your organization is waiting for approval by the LeaveOk team. You will get an email when it is approved.")
+                return render_template("auth/login.html")
+            if org.status != "active":
+                flash("Your organization request was not approved.")
+                return render_template("auth/login.html")
+
             login_user(user)
             return redirect(url_for("main.dashboard"))
 
@@ -102,9 +129,13 @@ def verify_email(token):
 def resend_verification():
     email = request.form.get("email", "").strip().lower()
     user = User.query.filter_by(email=email).first()
-    if user and not user.email_verified:
+    if user and not user.email_verified and can_send_verification(user):
         send_verification_email(user)
-    flash("If this account needs verification, a new link was sent. Check your inbox and spam.", "ok")
+    flash(
+        "If this account needs verification, a link was sent. "
+        "You can request one every 10 minutes. Check your inbox and spam.",
+        "ok",
+    )
     return redirect(url_for("auth.login"))
 
 

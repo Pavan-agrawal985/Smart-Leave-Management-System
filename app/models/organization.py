@@ -11,6 +11,9 @@ class Organization(db.Model):
     weekend_days = db.Column(
         db.String(20), nullable=False, default="5,6", server_default="5,6"
     )  # 0=Mon ... 6=Sun
+    status = db.Column(
+        db.String(20), nullable=False, default="pending", server_default="active"
+    )  # pending, active, rejected
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
 
 

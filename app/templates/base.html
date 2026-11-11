@@ -23,6 +23,9 @@
           <a href="{{ url_for('admin.leave_types') }}">Leave types</a>
           <a href="{{ url_for('admin.holidays') }}">Holidays</a>
         {% endif %}
+        {% if is_owner %}
+          <a href="{{ url_for('owner.organizations') }}">Owner</a>
+        {% endif %}
         <a href="{{ url_for('auth.logout') }}">Logout ({{ current_user.name }})</a>
       {% else %}
         <a href="{{ url_for('auth.login') }}">Login</a>

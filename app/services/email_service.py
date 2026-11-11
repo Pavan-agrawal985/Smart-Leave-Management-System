@@ -1,10 +1,13 @@
 import os
 import smtplib
+from datetime import datetime, timedelta
 from email.message import EmailMessage
 from flask import url_for, current_app
 from itsdangerous import URLSafeTimedSerializer, BadSignature
 from app.extensions import db
 from app.models import User
+
+RESEND_WAIT = timedelta(minutes=10)
 
 
 def _send(to_email, subject, body):
@@ -39,7 +42,15 @@ def _serializer():
     return URLSafeTimedSerializer(current_app.config["SECRET_KEY"], salt="verify-email")
 
 
+def can_send_verification(user):
+    if not user.verification_sent_at:
+        return True
+    return datetime.utcnow() - user.verification_sent_at >= RESEND_WAIT
+
+
 def send_verification_email(user):
+    user.verification_sent_at = datetime.utcnow()
+    db.session.commit()
     token = _serializer().dumps({"id": user.id, "email": user.email})
     link = url_for("auth.verify_email", token=token, _external=True)
     return _send(
@@ -61,10 +72,6 @@ def read_verification_token(token):
     return None
 
 
-def _dates(req):
-    return f"{req.from_date.strftime('%d %b %Y')} to {req.to_date.strftime('%d %b %Y')}"
-
-
 def approvers_for(req):
     employee = req.user
     if employee.manager_id:
@@ -83,11 +90,9 @@ def notify_new_request(req):
     for approver in approvers_for(req):
         _send(
             approver.email,
-            f"Leave request from {req.user.name}",
-            f"{req.user.name} applied for {req.days} working day(s) of "
-            f"{req.leave_type.name} ({_dates(req)}).\n"
-            f"Reason: {req.reason or '-'}\n\n"
-            "Log in to LeaveOk to approve or reject.",
+            "A leave request is waiting for you",
+            "A leave request is waiting for your approval.\n\n"
+            "Log in to LeaveOk to view it.",
         )
 
 
@@ -97,6 +102,15 @@ def notify_decision(req):
     _send(
         req.user.email,
         f"Your leave request was {req.status}",
-        f"Your {req.leave_type.name} request ({_dates(req)}, "
-        f"{req.days} working day(s)) was {req.status}.",
+        "Log in to LeaveOk to see the details.",
     )
+
+
+def notify_org_approved(org):
+    admin = User.query.filter_by(organization_id=org.id, role="org_admin").first()
+    if admin and admin.email_verified:
+        _send(
+            admin.email,
+            "Your LeaveOk organization is approved",
+            f"Good news, {org.name} is approved. You can log in to LeaveOk now.",
+        )

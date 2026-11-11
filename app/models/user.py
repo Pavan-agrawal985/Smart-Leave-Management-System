@@ -22,6 +22,7 @@ class User(UserMixin, db.Model):
     email_verified = db.Column(
         db.Boolean, nullable=False, default=False, server_default=db.text("true")
     )
+    verification_sent_at = db.Column(db.DateTime, nullable=True)
 
     def set_password(self, plain):
         self.password_hash = bcrypt.hashpw(
@@ -34,4 +35,12 @@ class User(UserMixin, db.Model):
 
 @login_manager.user_loader
 def load_user(user_id):
-    return db.session.get(User, int(user_id))
+    from app.models.organization import Organization
+
+    user = db.session.get(User, int(user_id))
+    if user is None:
+        return None
+    org = db.session.get(Organization, user.organization_id)
+    if org is None or org.status != "active":
+        return None
+    return user

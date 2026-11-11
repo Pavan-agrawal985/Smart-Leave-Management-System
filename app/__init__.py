@@ -1,8 +1,11 @@
+import os
 from flask import Flask
+from flask_compress import Compress
+from flask_login import current_user
+from werkzeug.middleware.proxy_fix import ProxyFix
 from config import Config
 from app.extensions import db, migrate, csrf, login_manager
-from flask_compress import Compress
-from werkzeug.middleware.proxy_fix import ProxyFix
+
 
 def create_app():
     app = Flask(__name__)
@@ -17,11 +20,22 @@ def create_app():
     Compress(app)
 
     from app import models  # noqa: F401
-    from app.routes import auth, main, leave, admin
+    from app.routes import auth, main, leave, admin, owner
     app.register_blueprint(auth.bp)
     app.register_blueprint(main.bp)
     app.register_blueprint(leave.bp)
     app.register_blueprint(admin.bp)
+    app.register_blueprint(owner.bp)
+
+    @app.context_processor
+    def inject_owner():
+        owner_email = os.environ.get("OWNER_EMAIL", "").strip().lower()
+        is_owner = bool(
+            owner_email
+            and current_user.is_authenticated
+            and current_user.email.lower() == owner_email
+        )
+        return {"is_owner": is_owner}
 
     @app.route("/health")
     def health():

@@ -1,3 +1,4 @@
+import bcrypt
 import os
 import re
 from types import SimpleNamespace
@@ -18,6 +19,12 @@ from app.services.org_templates import seed_leave_types  # noqa: E402
 PASSWORD = "Passw0rd!x"
 OWNER_EMAIL = "owner@acme.io"
 
+
+@pytest.fixture(autouse=True)
+def fast_passwords(monkeypatch):
+    """Cheap hashing in tests only. The real app keeps the normal, slow setting."""
+    real_gensalt = bcrypt.gensalt
+    monkeypatch.setattr(bcrypt, "gensalt", lambda *a, **k: real_gensalt(rounds=4))
 
 class SqliteTestConfig(Config):
     TESTING = True

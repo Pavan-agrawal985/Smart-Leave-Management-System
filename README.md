@@ -1,109 +1,94 @@
 # LeaveOk
 
-A multi-organization leave management system. Each organization (school, college, corporate office, bank, or any other institution) signs up, gets its own private workspace, and manages employee leave with its own people and rules.
+A multi-organization leave management system. Schools, colleges, banks and offices each get a private workspace with their own people, leave types, holidays and approvals.
 
-## Features
+**Live:** https://YOUR-APP.vercel.app
+**Demo video:** https://YOUR-VIDEO-LINK
 
-- **Multi-organization (multi-tenant):** every record belongs to an organization, and one organization can never see another's data
-- **Organization sign-up** with ready-made leave types for School, College, Corporate and Bank
-- **Roles:** Organization Admin, Manager, Employee
-- **Employee management:** the admin adds people and sets who reports to whom
-- **Apply for leave** with overlap check and balance check
-- **Approve or reject:** managers handle their own team, admins handle everyone
-- **Leave balance** per leave type for the current year
-- **Security:** bcrypt password hashing, CSRF protection, secrets kept in `.env`, parameterized queries through SQLAlchemy
+![Dashboard](docs/screenshots/dashboard.png)
+
+## What it does
+
+- **Multi-tenant by design:** every record belongs to an organization, and one organization can never see another's data (covered by automated tests)
+- **Onboarding:** pick School, College, Corporate or Bank and get sensible default leave types and weekly offs
+- **Owner approval:** new organizations are reviewed before they can use the app
+- **Leave rules:** configurable leave types and quotas, weekly offs, holidays, overlap and balance checks, weekends and holidays excluded from leave days
+- **Approvals:** managers approve their own team, admins approve everyone, nobody approves their own request
+- **Team calendar:** who is away and when, showing names and dates only
+- **Reports:** filter by year, status, type and person, with a CSV export that is safe to open in Excel
+- **People management:** change roles and managers, deactivate leavers, with reporting-loop protection
+
+## Security
+
+- Passwords hashed with bcrypt, 8 to 16 characters with upper, lower, number and symbol
+- Email verification links and forgot-password links that expire and work once
+- Login lockout after 5 wrong attempts, and throttled verification and reset emails
+- CSRF protection on every form, role checks on every page, secrets only in environment variables
+- Notification emails contain no names, dates or reasons
+
+## Screenshots
+
+| Apply | Approvals |
+|---|---|
+| ![Apply](docs/screenshots/apply.png) | ![Approvals](docs/screenshots/approvals.png) |
+
+| Calendar | Reports |
+|---|---|
+| ![Calendar](docs/screenshots/calendar.png) | ![Reports](docs/screenshots/reports.png) |
 
 ## Tech stack
 
 | Part | Tool |
 |---|---|
-| Backend | Flask |
-| Database | Postgres (Neon) with SQLAlchemy and Flask-Migrate |
-| Login | Flask-Login, bcrypt |
-| Forms and security | Flask-WTF (CSRF) |
-| Frontend | Jinja templates, plain CSS |
+| Backend | Flask, SQLAlchemy, Flask-Migrate |
+| Database | PostgreSQL (Neon) |
+| Auth and security | Flask-Login, bcrypt, Flask-WTF (CSRF) |
+| Hosting | Vercel (serverless) |
+| Tests and CI | pytest (150+ tests), GitHub Actions |
 
 ## Project structure
 
 ```
-LeaveOk/
-├── run.py                  # starts the app
-├── config.py               # reads settings from .env
-├── requirements.txt
-├── migrations/             # database change history
-└── app/
-    ├── __init__.py         # creates the Flask app
-    ├── extensions.py       # db, login, csrf, migrate
-    ├── models/             # database tables
-    ├── routes/             # pages (auth, main, leave, admin)
-    ├── services/           # business rules (balances, approvals, templates)
-    ├── templates/          # HTML pages
-    └── static/             # CSS
+app/
+  models/      database tables
+  routes/      pages (auth, leave, admin, owner, reports)
+  services/    business rules (balances, workflow, email, reports)
+  templates/   HTML pages
+tests/         automated test suite
+migrations/    database change history
 ```
 
 ## Run it locally
 
-**1. Clone and enter the project**
-
 ```bash
 git clone https://github.com/Pavan-agrawal985/Smart-Leave-Management-System.git
 cd Smart-Leave-Management-System
-```
-
-**2. Create a virtual environment and install packages**
-
-```bash
 python -m venv venv
-venv\Scripts\activate          # Windows
-# source venv/bin/activate     # macOS / Linux
+venv\Scripts\activate            # Windows
 python -m pip install -r requirements.txt
 ```
 
-**3. Create a free Postgres database** at [neon.com](https://neon.com) and copy its connection string.
-
-**4. Create a `.env` file** in the project root
+Create a free Postgres database at [neon.com](https://neon.com), then create a `.env` file:
 
 ```
 SECRET_KEY=any-long-random-text
-DATABASE_URL=postgresql+psycopg2://USER:PASSWORD@HOST/neondb?sslmode=require
+DATABASE_URL=postgresql://USER:PASSWORD@HOST/neondb?sslmode=require
+OWNER_EMAIL=your-email@gmail.com
+MAIL_USERNAME=sender@gmail.com
+MAIL_PASSWORD=sixteenletterapppassword
 FLASK_APP=run.py
 ```
-
-**5. Create the tables and start the app**
 
 ```bash
 flask db upgrade
 python run.py
 ```
 
-Open http://127.0.0.1:5000 and sign up your first organization.
-
-## How to use
-
-1. **Sign up** an organization. You become its admin, and default leave types are created for your organization type.
-2. **Employees** page: add managers and employees, and set who they report to.
-3. Employees **apply** for leave. Their manager or the admin **approves or rejects** it.
-4. The **dashboard** shows each person's balance for every leave type.
-
-## Current limits
-
-- Leave days are counted as calendar days (weekends and holidays are not excluded yet)
-- Approval is single-step (the reporting manager or an admin)
-- Leave types are created from templates and cannot be edited from the screen yet
+Sign up with the `OWNER_EMAIL` address to become the owner. Run the tests with `python -m pytest -q`.
 
 ## Roadmap
 
-- [ ] Edit leave types and quotas from the admin screen
-- [ ] Holiday calendar and weekend exclusion
+- [ ] Custom email domain and a transactional email service
 - [ ] Multi-step approval chains per leave type
-- [ ] Email notifications
-- [ ] Team leave calendar and CSV reports
-- [ ] Automated tests for data isolation between organizations
-- [ ] Live deployment (VPS + Nginx + Gunicorn + Cloudflare) with CI/CD
-
-
-## Live demo
-
-https://smart-leave-management-system-lemon.vercel.app/
-
-Hosted on Vercel with a Neon Postgres database. Pushing to `main` redeploys automatically.
+- [ ] Carry-forward of unused leave at year end
+- [ ] Departments and department-level reports

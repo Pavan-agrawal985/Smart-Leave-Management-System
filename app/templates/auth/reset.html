@@ -1,15 +1,13 @@
-{% extends "base.html" %}
+{% extends "auth_base.html" %}
 {% block title %}Choose a new password - LeaveOk{% endblock %}
-{% block content %}
-<div class="card">
-  <h2>Choose a new password</h2>
-  <form method="POST">
-    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-    <label>New password (8-16 characters: upper, lower, number, symbol)</label>
-    <input type="password" name="password" required minlength="8" maxlength="16">
-    <label>Repeat the new password</label>
-    <input type="password" name="confirm" required minlength="8" maxlength="16">
-    <button type="submit">Change password</button>
-  </form>
-</div>
+{% block auth %}
+<h1>Choose a new password</h1>
+<form method="POST">
+  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+  <label for="password">New password (8-16 characters: upper, lower, number, symbol)</label>
+  <input id="password" type="password" name="password" autocomplete="new-password" required minlength="8" maxlength="16">
+  <label for="confirm">Repeat the new password</label>
+  <input id="confirm" type="password" name="confirm" autocomplete="new-password" required minlength="8" maxlength="16">
+  <button type="submit">Change password</button>
+</form>
 {% endblock %}

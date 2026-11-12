@@ -1,27 +1,23 @@
-{% extends "base.html" %}
+{% extends "auth_base.html" %}
 {% block title %}Login - LeaveOk{% endblock %}
-{% block content %}
-<div class="card">
-  <h2>Login</h2>
-  <form method="POST">
-    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-
-    <label>Email</label>
-    <input type="email" name="email" required>
-
-    <label>Password</label>
-    <input type="password" name="password" required>
-
-    <button type="submit">Login</button>
-  </form>
-  {% if unverified_email %}
-  <form method="POST" action="{{ url_for('auth.resend_verification') }}">
-    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-    <input type="hidden" name="email" value="{{ unverified_email }}">
-    <button type="submit">Resend verification email</button>
-  </form>
-  {% endif %}
-  <p class="muted">New organization? <a href="{{ url_for('auth.register') }}">Sign up</a></p>
-  <p class="muted"><a href="{{ url_for('auth.forgot_password') }}">Forgot password?</a></p>
-</div>
+{% block auth %}
+<h1>Welcome back</h1>
+<p class="muted">Log in to manage your leave.</p>
+<form method="POST">
+  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+  <label for="email">Email</label>
+  <input id="email" type="email" name="email" autocomplete="email" required>
+  <label for="password">Password</label>
+  <input id="password" type="password" name="password" autocomplete="current-password" required>
+  <button type="submit">Login</button>
+</form>
+{% if unverified_email %}
+<form method="POST" action="{{ url_for('auth.resend_verification') }}">
+  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+  <input type="hidden" name="email" value="{{ unverified_email }}">
+  <button type="submit" class="secondary">Resend verification email</button>
+</form>
+{% endif %}
+<p class="muted" style="margin-top:16px"><a href="{{ url_for('auth.forgot_password') }}">Forgot password?</a></p>
+<p class="muted">New organization? <a href="{{ url_for('auth.register') }}">Sign up</a></p>
 {% endblock %}

@@ -42,5 +42,6 @@ def create_app(config_class=Config):
     def health():
         db.session.execute(db.text("SELECT 1"))
         return "Database connected"
-
+    from app.cli import register_commands
+    register_commands(app)
     return app

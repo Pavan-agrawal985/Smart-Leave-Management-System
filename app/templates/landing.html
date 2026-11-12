@@ -1,21 +1,77 @@
 {% extends "base.html" %}
 {% block title %}LeaveOk - Leave management for schools, colleges and offices{% endblock %}
-{% block head %}<meta name="description" content="LeaveOk is a simple leave management system for schools, colleges, banks and offices. Set up in minutes with your own leave types, holidays and approvals.">{% endblock %}
-{% block wrap %}wide{% endblock %}
+{% block head %}
+<meta name="description" content="LeaveOk is a simple leave management system for schools, colleges, banks and offices. Set up in minutes with your own leave types, holidays and approvals.">
+<meta property="og:title" content="LeaveOk - Leave management that fits your institution">
+<meta property="og:description" content="Leave types, holidays, approvals and reports, set up in minutes for schools, colleges, banks and offices.">
+{% endblock %}
+{% block wrap %}landing{% endblock %}
 {% block content %}
-<section class="hero">
-  <h1>Leave management that fits your institution</h1>
-  <p>Schools, colleges, banks and offices each have different rules. LeaveOk lets you set yours up in minutes: leave types, holidays, weekly offs and approvals.</p>
-  <div class="links">
-    <a href="{{ url_for('auth.register') }}">Create your organization</a>
-    <a href="{{ url_for('auth.login') }}" class="ghost">Login</a>
+<section class="hero-band">
+  <div class="section-in hero-grid">
+    <div>
+      <h1>Leave management that fits your institution</h1>
+      <p class="lead">Schools, colleges, banks and offices all have different rules. Set up yours in minutes: leave types, holidays, weekly offs and approvals.</p>
+      <a class="btn" href="{{ url_for('auth.register') }}">Create your organization</a>
+      <a class="btn ghost" href="{{ url_for('auth.login') }}">Login</a>
+    </div>
+    <div class="mock" aria-label="Sample dashboard">
+      <div class="mock-head"><span>My leave balance</span><small>Sample view</small></div>
+      <div class="tiles">
+        <div class="tile"><div class="tile-top"><span>Casual</span></div><div class="tile-num"><b>5</b> left</div><div class="bar"><span style="width: 37%"></span></div></div>
+        <div class="tile"><div class="tile-top"><span>Medical</span></div><div class="tile-num"><b>9</b> left</div><div class="bar"><span style="width: 10%"></span></div></div>
+        <div class="tile"><div class="tile-top"><span>Earned</span></div><div class="tile-num"><b>12</b> left</div><div class="bar"><span style="width: 20%"></span></div></div>
+      </div>
+      <div class="mock-list">
+        <div class="mock-row"><span>Casual leave, 2 days</span><span class="badge approved">approved</span></div>
+        <div class="mock-row"><span>Medical leave, 1 day</span><span class="badge pending">pending</span></div>
+        <div class="mock-row"><span>Duty leave, 2 days</span><span class="badge rejected">rejected</span></div>
+      </div>
+    </div>
   </div>
 </section>
 
-<section class="features">
-  <div class="card"><h3>Ready in minutes</h3><p>Pick School, College, Corporate or Bank and start with sensible default rules.</p></div>
-  <div class="card"><h3>Your rules</h3><p>Edit leave types and quotas, add holidays and set your weekly offs.</p></div>
-  <div class="card"><h3>Clear approvals</h3><p>Employees apply, managers approve, and everyone sees a simple team calendar.</p></div>
-  <div class="card"><h3>Private by design</h3><p>Every organization's data is kept completely separate.</p></div>
+<section class="section">
+  <div class="section-in">
+    <h2>Everything your HR desk needs</h2>
+    <p class="sub">Simple for employees, flexible for administrators.</p>
+    <div class="features">
+      <div class="feature"><div class="feature-ic"><svg class="ic" aria-hidden="true"><use href="#i-bolt"/></svg></div><h3>Ready in minutes</h3><p>Pick School, College, Corporate or Bank and start with sensible default rules.</p></div>
+      <div class="feature"><div class="feature-ic"><svg class="ic" aria-hidden="true"><use href="#i-sliders"/></svg></div><h3>Your rules</h3><p>Edit leave types and quotas, add holidays and set your own weekly offs.</p></div>
+      <div class="feature"><div class="feature-ic"><svg class="ic" aria-hidden="true"><use href="#i-check"/></svg></div><h3>Clear approvals</h3><p>Employees apply, managers approve, and everyone is notified by email.</p></div>
+      <div class="feature"><div class="feature-ic"><svg class="ic" aria-hidden="true"><use href="#i-calendar"/></svg></div><h3>Team calendar</h3><p>See who is away and when, with holidays and weekly offs highlighted.</p></div>
+      <div class="feature"><div class="feature-ic"><svg class="ic" aria-hidden="true"><use href="#i-chart"/></svg></div><h3>Reports and export</h3><p>Filter by year, type or person and download a CSV for Excel.</p></div>
+      <div class="feature"><div class="feature-ic"><svg class="ic" aria-hidden="true"><use href="#i-shield"/></svg></div><h3>Private by design</h3><p>Every organization's data is kept completely separate and secure.</p></div>
+    </div>
+  </div>
+</section>
+
+<section class="section" style="padding-top: 0">
+  <div class="section-in">
+    <h2>How it works</h2>
+    <p class="sub">From sign-up to your first approved leave in three steps.</p>
+    <div class="steps">
+      <div class="step"><h3>Create your organization</h3><p>Sign up, verify your email, and we review your request.</p></div>
+      <div class="step"><h3>Set up your team</h3><p>Add people, choose managers, and adjust leave types and holidays.</p></div>
+      <div class="step"><h3>Start managing leave</h3><p>Employees apply, managers approve, and reports build themselves.</p></div>
+    </div>
+  </div>
+</section>
+
+<section class="section" style="padding-top: 0">
+  <div class="section-in">
+    <h2>Built for every institution</h2>
+    <p class="sub">One product, with ready-made starting points.</p>
+    <div class="pills">
+      <span class="pill">Schools</span><span class="pill">Colleges</span><span class="pill">Banks</span>
+      <span class="pill">Corporate offices</span><span class="pill">Any organization</span>
+    </div>
+  </div>
+</section>
+
+<section class="cta-band">
+  <h2>Ready to simplify leave?</h2>
+  <p>Create your organization in a few minutes.</p>
+  <a class="btn" href="{{ url_for('auth.register') }}">Create your organization</a>
 </section>
 {% endblock %}

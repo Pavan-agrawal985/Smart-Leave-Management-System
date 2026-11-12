@@ -1,34 +1,33 @@
-{% extends "base.html" %}
+{% extends "auth_base.html" %}
 {% block title %}Sign up - LeaveOk{% endblock %}
-{% block content %}
-<div class="card">
-  <h2>Create your organization</h2>
-  <form method="POST">
-    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+{% block auth %}
+<h1>Create your organization</h1>
+<p class="muted">Set up takes a few minutes.</p>
+<form method="POST">
+  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
 
-    <label>Organization name</label>
-    <input name="org_name" required>
+  <label for="org_name">Organization name</label>
+  <input id="org_name" name="org_name" required>
 
-    <label>Organization type</label>
-    <select name="org_type">
-      <option value="school">School</option>
-      <option value="college">College</option>
-      <option value="corporate">Corporate office</option>
-      <option value="bank">Bank</option>
-      <option value="custom">Other</option>
-    </select>
+  <label for="org_type">Organization type</label>
+  <select id="org_type" name="org_type">
+    <option value="school">School</option>
+    <option value="college">College</option>
+    <option value="corporate">Corporate office</option>
+    <option value="bank">Bank</option>
+    <option value="custom">Other</option>
+  </select>
 
-    <label>Your name</label>
-    <input name="name" required>
+  <label for="name">Your name</label>
+  <input id="name" name="name" autocomplete="name" required>
 
-    <label>Email</label>
-    <input type="email" name="email" required>
+  <label for="email">Email</label>
+  <input id="email" type="email" name="email" autocomplete="email" required>
 
-    <label>Password (minimum 8-16 characters)</label>
-    <input type="password" name="password" required minlength="8" maxlength="16">
+  <label for="password">Password (8-16 characters: upper, lower, number, symbol)</label>
+  <input id="password" type="password" name="password" autocomplete="new-password" required minlength="8" maxlength="16">
 
-    <button type="submit">Create account</button>
-  </form>
-  <p class="muted">Already have an account? <a href="{{ url_for('auth.login') }}">Login</a></p>
-</div>
+  <button type="submit">Create account</button>
+</form>
+<p class="muted" style="margin-top:16px">Already have an account? <a href="{{ url_for('auth.login') }}">Login</a></p>
 {% endblock %}

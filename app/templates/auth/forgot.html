@@ -1,15 +1,13 @@
-{% extends "base.html" %}
+{% extends "auth_base.html" %}
 {% block title %}Forgot password - LeaveOk{% endblock %}
-{% block content %}
-<div class="card">
-  <h2>Forgot your password?</h2>
-  <p class="muted">Enter your email and we will send you a link to choose a new one.</p>
-  <form method="POST">
-    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-    <label>Email</label>
-    <input type="email" name="email" required>
-    <button type="submit">Send reset link</button>
-  </form>
-  <p class="muted"><a href="{{ url_for('auth.login') }}">Back to login</a></p>
-</div>
+{% block auth %}
+<h1>Forgot your password?</h1>
+<p class="muted">Enter your email and we will send you a link to choose a new one.</p>
+<form method="POST">
+  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+  <label for="email">Email</label>
+  <input id="email" type="email" name="email" autocomplete="email" required>
+  <button type="submit">Send reset link</button>
+</form>
+<p class="muted" style="margin-top:16px"><a href="{{ url_for('auth.login') }}">Back to login</a></p>
 {% endblock %}

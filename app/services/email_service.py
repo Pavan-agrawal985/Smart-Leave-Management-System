@@ -114,3 +114,37 @@ def notify_org_approved(org):
             "Your LeaveOk organization is approved",
             f"Good news, {org.name} is approved. You can log in to LeaveOk now.",
         )
+
+def _reset_serializer():
+    return URLSafeTimedSerializer(current_app.config["SECRET_KEY"], salt="reset-password")
+
+
+def can_send_reset(user):
+    if not user.reset_sent_at:
+        return True
+    return datetime.utcnow() - user.reset_sent_at >= RESEND_WAIT
+
+
+def send_reset_email(user):
+    user.reset_sent_at = datetime.utcnow()
+    db.session.commit()
+    # The token carries a fingerprint of the current password, so it works only once.
+    token = _reset_serializer().dumps({"id": user.id, "fp": user.password_hash[-12:]})
+    link = url_for("auth.reset_password", token=token, _external=True)
+    return _send(
+        user.email,
+        "Reset your LeaveOk password",
+        f"Hi {user.name},\n\nClick this link to choose a new password (valid for 1 hour):\n{link}\n\n"
+        "If you did not ask for this, ignore this email. Your password stays the same.",
+    )
+
+
+def read_reset_token(token):
+    try:
+        data = _reset_serializer().loads(token, max_age=3600)
+    except BadSignature:  # also covers expired links
+        return None
+    user = db.session.get(User, data.get("id"))
+    if user and user.password_hash[-12:] == data.get("fp"):
+        return user
+    return None

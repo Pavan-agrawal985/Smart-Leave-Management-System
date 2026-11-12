@@ -237,3 +237,6 @@ table.cal td.today { outline: 2px solid #2563eb; outline-offset: -2px; }
 .links a.ghost { background: transparent; color: #2563eb; border: 1px solid #2563eb; }
 .features { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; margin-top: 24px; }
 .features .card h3 { margin-top: 0; }
+
+.type-edit select { width: auto; min-width: 130px; }
+tr.inactive td { color: #94a3b8; }

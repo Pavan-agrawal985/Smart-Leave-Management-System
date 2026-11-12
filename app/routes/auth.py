@@ -1,5 +1,5 @@
-from datetime import datetime, timedelta
 import os
+from datetime import datetime, timedelta
 from flask import Blueprint, render_template, request, redirect, url_for, flash
 from flask_login import login_user, logout_user, login_required, current_user
 from app.extensions import db
@@ -8,9 +8,13 @@ from app.services.org_templates import seed_leave_types
 from app.services.validation import check_email, check_password
 from app.services.email_service import (
     send_verification_email, read_verification_token, can_send_verification,
+    send_reset_email, read_reset_token, can_send_reset,
 )
 
 bp = Blueprint("auth", __name__)
+
+MAX_FAILS = 5
+LOCK_MINUTES = 15
 
 
 def _is_owner_email(email):
@@ -82,10 +86,6 @@ def register():
     return render_template("auth/register.html")
 
 
-MAX_FAILS = 5
-LOCK_MINUTES = 15
-
-
 @bp.route("/login", methods=["GET", "POST"])
 def login():
     if current_user.is_authenticated:
@@ -107,6 +107,10 @@ def login():
                 user.failed_logins = 0
                 user.locked_until = None
                 db.session.commit()
+
+            if not user.is_active:
+                flash("This account is deactivated. Please contact your administrator.")
+                return render_template("auth/login.html")
 
             if not user.email_verified:
                 flash("Please verify your email first. Check your inbox and spam folder.")
@@ -134,6 +138,7 @@ def login():
 
     return render_template("auth/login.html")
 
+
 @bp.route("/verify/<token>")
 def verify_email(token):
     user = read_verification_token(token)
@@ -159,6 +164,53 @@ def resend_verification():
         "ok",
     )
     return redirect(url_for("auth.login"))
+
+
+@bp.route("/forgot-password", methods=["GET", "POST"])
+def forgot_password():
+    if current_user.is_authenticated:
+        return redirect(url_for("main.dashboard"))
+
+    if request.method == "POST":
+        email = request.form.get("email", "").strip().lower()
+        user = User.query.filter_by(email=email).first()
+        if user and user.is_active and can_send_reset(user):
+            send_reset_email(user)
+        flash(
+            "If this email is registered, a reset link was sent. "
+            "You can request one every 10 minutes. Check your inbox and spam.",
+            "ok",
+        )
+        return redirect(url_for("auth.login"))
+
+    return render_template("auth/forgot.html")
+
+
+@bp.route("/reset-password/<token>", methods=["GET", "POST"])
+def reset_password(token):
+    user = read_reset_token(token)
+    if not user:
+        flash("This reset link is invalid or expired. Please request a new one.")
+        return redirect(url_for("auth.forgot_password"))
+
+    if request.method == "POST":
+        password = request.form.get("password", "")
+        confirm = request.form.get("confirm", "")
+        error = check_password(password)
+        if error:
+            flash(error)
+        elif password != confirm:
+            flash("The two passwords do not match.")
+        else:
+            user.set_password(password)
+            user.failed_logins = 0
+            user.locked_until = None
+            user.email_verified = True  # the link reached their inbox, so the address is real
+            db.session.commit()
+            flash("Password changed. You can log in now.", "ok")
+            return redirect(url_for("auth.login"))
+
+    return render_template("auth/reset.html", token=token)
 
 
 @bp.route("/logout")

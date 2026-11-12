@@ -1,7 +1,7 @@
+from datetime import datetime
 from functools import wraps
 from flask import Blueprint, render_template, request, redirect, url_for, flash, abort
 from flask_login import login_required, current_user
-from datetime import datetime
 from app.extensions import db
 from app.models import User, LeaveType, LeaveRequest, Holiday, Organization
 from app.services.validation import check_email, check_password
@@ -18,6 +18,8 @@ def org_admin_required(f):
         return f(*args, **kwargs)
     return wrapper
 
+
+# ---------------------------------------------------------------- employees
 
 @bp.route("/employees", methods=["GET", "POST"])
 @login_required
@@ -56,8 +58,8 @@ def employees():
                 name=name,
                 email=email,
                 role=role,
-                email_verified=False,
                 manager_id=manager.id if manager else None,
+                email_verified=False,
             )
             user.set_password(password)
             db.session.add(user)
@@ -69,10 +71,93 @@ def employees():
             return redirect(url_for("admin.employees"))
 
     users = User.query.filter_by(organization_id=org_id).order_by(User.name).all()
-    managers = [u for u in users if u.role in ("org_admin", "manager")]
+    managers = [u for u in users if u.role in ("org_admin", "manager") and u.is_active]
     by_id = {u.id: u for u in users}
     return render_template("admin/employees.html", users=users, managers=managers, by_id=by_id)
 
+
+def would_create_loop(user_id, new_manager_id):
+    """True if making new_manager_id the boss of user_id would create a reporting loop."""
+    seen = set()
+    current = new_manager_id
+    while current is not None and current not in seen:
+        if current == user_id:
+            return True
+        seen.add(current)
+        boss = db.session.get(User, current)
+        current = boss.manager_id if boss else None
+    return False
+
+
+def move_reports_up(user):
+    """The people reporting to `user` now report to `user`'s own manager."""
+    for report in User.query.filter_by(manager_id=user.id).all():
+        report.manager_id = user.manager_id
+
+
+@bp.route("/employees/<int:user_id>/edit", methods=["POST"])
+@login_required
+@org_admin_required
+def edit_employee(user_id):
+    org_id = current_user.organization_id
+    user = User.query.filter_by(id=user_id, organization_id=org_id).first_or_404()
+
+    if user.role == "org_admin":
+        flash("Admin accounts cannot be changed here.")
+        return redirect(url_for("admin.employees"))
+
+    role = request.form.get("role", user.role)
+    if role not in ("employee", "manager"):
+        role = user.role
+
+    manager = None
+    manager_id = request.form.get("manager_id", "")
+    if manager_id.isdigit():
+        manager = User.query.filter_by(
+            id=int(manager_id), organization_id=org_id, is_active=True
+        ).first()
+        if manager and manager.role not in ("org_admin", "manager"):
+            manager = None
+
+    if manager and would_create_loop(user.id, manager.id):
+        flash("That would make a reporting loop. Choose a different manager.")
+        return redirect(url_for("admin.employees"))
+
+    if user.role == "manager" and role == "employee":
+        move_reports_up(user)   # an employee cannot approve, so hand the team upwards
+
+    user.role = role
+    user.manager_id = manager.id if manager else None
+    db.session.commit()
+    flash("Employee updated.", "ok")
+    return redirect(url_for("admin.employees"))
+
+
+@bp.route("/employees/<int:user_id>/status/<action>", methods=["POST"])
+@login_required
+@org_admin_required
+def employee_status(user_id, action):
+    if action not in ("deactivate", "reactivate"):
+        abort(404)
+    user = User.query.filter_by(
+        id=user_id, organization_id=current_user.organization_id
+    ).first_or_404()
+
+    if user.role == "org_admin":
+        flash("Admin accounts cannot be deactivated here.")
+    elif action == "deactivate":
+        move_reports_up(user)
+        user.is_active = False
+        db.session.commit()
+        flash(f"{user.name} was deactivated.", "ok")
+    else:
+        user.is_active = True
+        db.session.commit()
+        flash(f"{user.name} was reactivated.", "ok")
+    return redirect(url_for("admin.employees"))
+
+
+# -------------------------------------------------------------- leave types
 
 def valid_quota(text):
     return text.isdigit() and 0 <= int(text) <= 365
@@ -165,6 +250,8 @@ def delete_leave_type(type_id):
         flash("Leave type deleted.", "ok")
     return redirect(url_for("admin.leave_types"))
 
+
+# ----------------------------------------------------------------- holidays
 
 DAYS = [(0, "Mon"), (1, "Tue"), (2, "Wed"), (3, "Thu"), (4, "Fri"), (5, "Sat"), (6, "Sun")]
 

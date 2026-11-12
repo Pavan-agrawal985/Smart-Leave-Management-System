@@ -13,8 +13,8 @@
     <label>Email</label>
     <input type="email" name="email" required>
 
-    <label>Temporary password (minimum 8 characters)</label>
-    <input type="password" name="password" required minlength="8">
+    <label>Temporary password (8-16 characters: upper, lower, number, symbol)</label>
+    <input type="password" name="password" required minlength="8" maxlength="16">
 
     <label>Role</label>
     <select name="role">
@@ -36,16 +36,55 @@
 
 <div class="card" style="margin-top:20px">
   <h2>People in your organization</h2>
+  <div class="cal-wrap">
   <table>
-    <tr><th>Name</th><th>Email</th><th>Role</th><th>Reports to</th></tr>
+    <tr><th>Name</th><th>Email</th><th>Role and manager</th><th>Status</th><th></th></tr>
     {% for u in users %}
-    <tr>
+    <tr class="{{ '' if u.is_active else 'inactive' }}">
       <td>{{ u.name }}</td>
       <td>{{ u.email }}</td>
-      <td>{{ u.role }}</td>
-      <td>{{ by_id[u.manager_id].name if u.manager_id else '-' }}</td>
+      {% if u.role == 'org_admin' %}
+        <td>Organization admin</td>
+        <td><span class="badge approved">active</span></td>
+        <td></td>
+      {% else %}
+        <td>
+          <form method="POST" action="{{ url_for('admin.edit_employee', user_id=u.id) }}" class="type-edit">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <select name="role">
+              <option value="employee" {% if u.role == 'employee' %}selected{% endif %}>Employee</option>
+              <option value="manager" {% if u.role == 'manager' %}selected{% endif %}>Manager</option>
+            </select>
+            <select name="manager_id">
+              <option value="">- no manager -</option>
+              {% for m in managers %}
+                {% if m.id != u.id %}
+                <option value="{{ m.id }}" {% if u.manager_id == m.id %}selected{% endif %}>{{ m.name }}</option>
+                {% endif %}
+              {% endfor %}
+            </select>
+            <button class="btn-sm ok">Save</button>
+          </form>
+        </td>
+        <td><span class="badge {{ 'approved' if u.is_active else 'rejected' }}">{{ 'active' if u.is_active else 'inactive' }}</span></td>
+        <td>
+          {% if u.is_active %}
+          <form method="POST" action="{{ url_for('admin.employee_status', user_id=u.id, action='deactivate') }}"
+                onsubmit="return confirm('Deactivate this person? They will not be able to log in.')" class="inline">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <button class="btn-sm no">Deactivate</button>
+          </form>
+          {% else %}
+          <form method="POST" action="{{ url_for('admin.employee_status', user_id=u.id, action='reactivate') }}" class="inline">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <button class="btn-sm ok">Reactivate</button>
+          </form>
+          {% endif %}
+        </td>
+      {% endif %}
     </tr>
     {% endfor %}
   </table>
+  </div>
 </div>
 {% endblock %}

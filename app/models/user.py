@@ -25,6 +25,11 @@ class User(UserMixin, db.Model):
     verification_sent_at = db.Column(db.DateTime, nullable=True)
     failed_logins = db.Column(db.Integer, nullable=False, default=0, server_default="0")
     locked_until = db.Column(db.DateTime, nullable=True)
+    is_active = db.Column(
+        db.Boolean, nullable=False, default=True, server_default=db.text("true")
+    )
+    reset_sent_at = db.Column(db.DateTime, nullable=True)
+
     def set_password(self, plain):
         self.password_hash = bcrypt.hashpw(
             plain.encode("utf-8"), bcrypt.gensalt()
@@ -39,7 +44,7 @@ def load_user(user_id):
     from app.models.organization import Organization
 
     user = db.session.get(User, int(user_id))
-    if user is None:
+    if user is None or not user.is_active:
         return None
     org = db.session.get(Organization, user.organization_id)
     if org is None or org.status != "active":

@@ -118,3 +118,28 @@ def test_resend_does_not_reveal_which_emails_exist(client, outbox):
     r = client.post("/resend-verification", data={"email": "ghost@nowhere.io"}, follow_redirects=True)
     assert b"If this account needs verification" in r.data
     assert outbox == []
+
+def wrong(client, times):
+    for _ in range(times):
+        client.post("/login", data={"email": "emp@alpha.io", "password": "Wrong@2026x"})
+
+
+def test_account_locks_after_five_wrong_passwords(client, world):
+    wrong(client, 5)
+    r = client.post("/login", data={"email": "emp@alpha.io", "password": PASSWORD})
+    assert b"Too many failed attempts" in r.data           # even the right password is refused
+
+
+def test_lock_expires_and_success_resets_counter(client, factory, world):
+    wrong(client, 5)
+    factory.update(User, world.a_emp, locked_until=datetime.utcnow() - timedelta(minutes=1))
+    ok = client.post("/login", data={"email": "emp@alpha.io", "password": PASSWORD})
+    assert ok.status_code == 302                            # allowed again
+    client.get("/logout")
+    wrong(client, 4)                                        # counter started from zero
+    assert client.post("/login", data={"email": "emp@alpha.io", "password": PASSWORD}).status_code == 302
+
+
+def test_four_wrong_attempts_do_not_lock(client, world):
+    wrong(client, 4)
+    assert client.post("/login", data={"email": "emp@alpha.io", "password": PASSWORD}).status_code == 302

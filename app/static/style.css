@@ -231,3 +231,9 @@ table.cal td.today { outline: 2px solid #2563eb; outline-offset: -2px; }
 .chip.approved { background: #16a34a; color: #fff; }
 .chip.pending { background: #fde68a; color: #92400e; }
 
+.hero { text-align: center; padding: 48px 8px 24px; }
+.hero h1 { font-size: 36px; margin: 0 0 12px; }
+.hero p { max-width: 620px; margin: 0 auto 20px; color: #475569; font-size: 18px; }
+.links a.ghost { background: transparent; color: #2563eb; border: 1px solid #2563eb; }
+.features { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; margin-top: 24px; }
+.features .card h3 { margin-top: 0; }

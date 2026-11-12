@@ -1,3 +1,4 @@
+from datetime import datetime, timedelta
 import os
 from flask import Blueprint, render_template, request, redirect, url_for, flash
 from flask_login import login_user, logout_user, login_required, current_user
@@ -81,6 +82,10 @@ def register():
     return render_template("auth/register.html")
 
 
+MAX_FAILS = 5
+LOCK_MINUTES = 15
+
+
 @bp.route("/login", methods=["GET", "POST"])
 def login():
     if current_user.is_authenticated:
@@ -89,9 +94,20 @@ def login():
     if request.method == "POST":
         email = request.form.get("email", "").strip().lower()
         password = request.form.get("password", "")
+        now = datetime.utcnow()
 
         user = User.query.filter_by(email=email).first()
+
+        if user and user.locked_until and user.locked_until > now:
+            flash(f"Too many failed attempts. Try again in {LOCK_MINUTES} minutes.")
+            return render_template("auth/login.html")
+
         if user and user.check_password(password):
+            if user.failed_logins or user.locked_until:
+                user.failed_logins = 0
+                user.locked_until = None
+                db.session.commit()
+
             if not user.email_verified:
                 flash("Please verify your email first. Check your inbox and spam folder.")
                 return render_template("auth/login.html", unverified_email=user.email)
@@ -107,10 +123,16 @@ def login():
             login_user(user)
             return redirect(url_for("main.dashboard"))
 
+        if user:
+            user.failed_logins += 1
+            if user.failed_logins >= MAX_FAILS:
+                user.locked_until = now + timedelta(minutes=LOCK_MINUTES)
+                user.failed_logins = 0
+            db.session.commit()
+
         flash("Invalid email or password.")
 
     return render_template("auth/login.html")
-
 
 @bp.route("/verify/<token>")
 def verify_email(token):

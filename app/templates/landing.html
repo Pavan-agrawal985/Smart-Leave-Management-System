@@ -1,0 +1,21 @@
+{% extends "base.html" %}
+{% block title %}LeaveOk - Leave management for schools, colleges and offices{% endblock %}
+{% block head %}<meta name="description" content="LeaveOk is a simple leave management system for schools, colleges, banks and offices. Set up in minutes with your own leave types, holidays and approvals.">{% endblock %}
+{% block wrap %}wide{% endblock %}
+{% block content %}
+<section class="hero">
+  <h1>Leave management that fits your institution</h1>
+  <p>Schools, colleges, banks and offices each have different rules. LeaveOk lets you set yours up in minutes: leave types, holidays, weekly offs and approvals.</p>
+  <div class="links">
+    <a href="{{ url_for('auth.register') }}">Create your organization</a>
+    <a href="{{ url_for('auth.login') }}" class="ghost">Login</a>
+  </div>
+</section>
+
+<section class="features">
+  <div class="card"><h3>Ready in minutes</h3><p>Pick School, College, Corporate or Bank and start with sensible default rules.</p></div>
+  <div class="card"><h3>Your rules</h3><p>Edit leave types and quotas, add holidays and set your weekly offs.</p></div>
+  <div class="card"><h3>Clear approvals</h3><p>Employees apply, managers approve, and everyone sees a simple team calendar.</p></div>
+  <div class="card"><h3>Private by design</h3><p>Every organization's data is kept completely separate.</p></div>
+</section>
+{% endblock %}

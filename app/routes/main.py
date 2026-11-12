@@ -1,4 +1,4 @@
-from flask import Blueprint, render_template, redirect, url_for
+from flask import Blueprint, Response, render_template, redirect, url_for
 from flask_login import login_required, current_user
 from app.extensions import db
 from app.models import Organization
@@ -11,7 +11,37 @@ bp = Blueprint("main", __name__)
 def index():
     if current_user.is_authenticated:
         return redirect(url_for("main.dashboard"))
-    return redirect(url_for("auth.login"))
+    return render_template("landing.html")
+
+
+@bp.route("/robots.txt")
+def robots():
+    text = (
+        "User-agent: *\n"
+        "Allow: /\n"
+        "Disallow: /admin/\n"
+        "Disallow: /owner/\n"
+        "Disallow: /leave/\n"
+        "Disallow: /dashboard\n"
+        f"Sitemap: {url_for('main.sitemap', _external=True)}\n"
+    )
+    return Response(text, mimetype="text/plain")
+
+
+@bp.route("/sitemap.xml")
+def sitemap():
+    pages = [
+        url_for("main.index", _external=True),
+        url_for("auth.login", _external=True),
+        url_for("auth.register", _external=True),
+    ]
+    urls = "".join(f"<url><loc>{p}</loc></url>" for p in pages)
+    xml = (
+        '<?xml version="1.0" encoding="UTF-8"?>'
+        '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">'
+        f"{urls}</urlset>"
+    )
+    return Response(xml, mimetype="application/xml")
 
 
 @bp.route("/dashboard")

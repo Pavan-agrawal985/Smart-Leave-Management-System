@@ -18,6 +18,7 @@
         <a href="{{ url_for('leave.team_calendar') }}">Calendar</a>
         {% if current_user.role in ('org_admin', 'manager') %}
           <a href="{{ url_for('leave.approvals') }}">Approvals</a>
+          <a href="{{ url_for('reports.index') }}">Reports</a>
         {% endif %}
         {% if current_user.role == 'org_admin' %}
           <a href="{{ url_for('admin.employees') }}">Employees</a>

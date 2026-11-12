@@ -1,0 +1,81 @@
+{% extends "base.html" %}
+{% block title %}Reports - LeaveOk{% endblock %}
+{% block wrap %}wide{% endblock %}
+{% block content %}
+<div class="card">
+  <h2>Leave report</h2>
+  <form method="GET" class="filters">
+    <div>
+      <label>Year</label>
+      <input type="number" name="year" value="{{ year }}" min="2000" max="2100">
+    </div>
+    <div>
+      <label>Status</label>
+      <select name="status">
+        <option value="">All</option>
+        {% for s in ['pending', 'approved', 'rejected'] %}
+          <option value="{{ s }}" {% if status == s %}selected{% endif %}>{{ s|capitalize }}</option>
+        {% endfor %}
+      </select>
+    </div>
+    <div>
+      <label>Leave type</label>
+      <select name="type">
+        <option value="">All</option>
+        {% for t in types %}
+          <option value="{{ t.id }}" {% if type_id == t.id %}selected{% endif %}>{{ t.name }}</option>
+        {% endfor %}
+      </select>
+    </div>
+    <div>
+      <label>Person</label>
+      <select name="person">
+        <option value="">Everyone</option>
+        {% for p in people %}
+          <option value="{{ p.id }}" {% if person_id == p.id %}selected{% endif %}>{{ p.name }}</option>
+        {% endfor %}
+      </select>
+    </div>
+    <button type="submit">Show</button>
+  </form>
+  <p><a class="dl" href="{{ url_for('reports.export', year=year, status=status or None, type=type_id, person=person_id) }}">Download CSV</a></p>
+</div>
+
+<div class="card" style="margin-top:20px">
+  <h2>Summary by person</h2>
+  {% if summary %}
+  <div class="cal-wrap">
+  <table>
+    <tr><th>Employee</th><th>Approved days</th><th>Pending days</th><th>Rejected requests</th></tr>
+    {% for s in summary %}
+    <tr><td>{{ s.name }}</td><td>{{ s.approved }}</td><td>{{ s.pending }}</td><td>{{ s.rejected }}</td></tr>
+    {% endfor %}
+  </table>
+  </div>
+  {% else %}
+  <p class="muted">No leave found for these filters.</p>
+  {% endif %}
+</div>
+
+<div class="card" style="margin-top:20px">
+  <h2>All requests ({{ rows|length }})</h2>
+  {% if rows %}
+  <div class="cal-wrap">
+  <table>
+    <tr><th>Employee</th><th>Type</th><th>From</th><th>To</th><th>Days</th><th>Status</th><th>Reason</th></tr>
+    {% for r in rows %}
+    <tr>
+      <td>{{ r.user.name }}</td>
+      <td>{{ r.leave_type.name }}</td>
+      <td>{{ r.from_date.strftime('%d %b %Y') }}</td>
+      <td>{{ r.to_date.strftime('%d %b %Y') }}</td>
+      <td>{{ r.days }}</td>
+      <td><span class="badge {{ r.status }}">{{ r.status }}</span></td>
+      <td>{{ r.reason or '-' }}</td>
+    </tr>
+    {% endfor %}
+  </table>
+  </div>
+  {% endif %}
+</div>
+{% endblock %}

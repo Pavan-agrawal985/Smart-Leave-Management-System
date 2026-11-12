@@ -20,12 +20,13 @@ def create_app(config_class=Config):
     Compress(app)
 
     from app import models  # noqa: F401
-    from app.routes import auth, main, leave, admin, owner
+    from app.routes import auth, main, leave, admin, owner, reports
     app.register_blueprint(auth.bp)
     app.register_blueprint(main.bp)
     app.register_blueprint(leave.bp)
     app.register_blueprint(admin.bp)
     app.register_blueprint(owner.bp)
+    app.register_blueprint(reports.bp)
 
     @app.context_processor
     def inject_owner():

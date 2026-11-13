@@ -14,11 +14,11 @@ def signup(client, **over):
     return client.post("/register", data=data)
 
 
-def test_signup_creates_pending_org_and_unverified_admin(client, factory, outbox):
+def test_signup_creates_active_org_and_unverified_admin(client, factory, outbox):
     r = signup(client, email="Principal@GV.in")
     assert r.status_code == 302 and "/login" in r.headers["Location"]
     org = factory.get(Organization, name="Green Valley School")
-    assert org.status == "pending"
+    assert org.status == "active"
     assert org.weekend_days == "6"
     assert factory.count(LeaveType, organization_id=org.id) > 0
     user = factory.get(User, email="principal@gv.in")           # stored in lowercase
@@ -27,17 +27,14 @@ def test_signup_creates_pending_org_and_unverified_admin(client, factory, outbox
     assert len(outbox) == 1 and outbox[0]["to"] == "principal@gv.in"
 
 
-def test_owner_email_signup_is_active_immediately(client, factory):
-    signup(client, email="owner@acme.io")
-    assert factory.get(Organization, name="Green Valley School").status == "active"
-
-
 @pytest.mark.parametrize("over,message", [
     ({"password": "ravi1234"}, b"Password needs"),
     ({"password": "Ab1@"}, b"8 to 16"),
     ({"email": "not-an-email"}, b"Invalid email"),
     ({"org_name": ""}, b"All fields are required."),
     ({"name": ""}, b"All fields are required."),
+    ({"org_name": "x" * 151}, b"Organization name is too long."),
+    ({"name": "x" * 101}, b"Name is too long."),
 ])
 def test_signup_rules(client, factory, over, message):
     r = signup(client, **over)
@@ -76,18 +73,19 @@ def test_bad_and_tampered_links_do_nothing(client, factory, outbox, token_in):
     assert factory.get(User, email="principal@gv.in").email_verified is False
 
 
-def test_pending_org_cannot_log_in_even_after_verifying(client, factory, outbox, token_in):
+
+def test_new_org_admin_logs_in_right_after_verifying(client, outbox, token_in):
     signup(client)
     client.get("/verify/" + token_in(outbox[-1]))
     r = client.post("/login", data={"email": "principal@gv.in", "password": STRONG})
-    assert b"waiting for approval" in r.data
+    assert r.status_code == 302 and "/dashboard" in r.headers["Location"]
 
 
-def test_rejected_org_cannot_log_in(client, factory):
-    org = factory.org(status="rejected")
+def test_suspended_org_cannot_log_in(client, factory):
+    org = factory.org(status="suspended")
     factory.user(org, "a@alpha.io")
     r = client.post("/login", data={"email": "a@alpha.io", "password": PASSWORD})
-    assert b"not approved" in r.data
+    assert b"suspended" in r.data
 
 
 def test_wrong_password_and_unknown_email(client, world):

@@ -6,7 +6,7 @@ from app.models import Holiday, LeaveRequest, LeaveType, User, Organization
 GET_PAGES = ["/dashboard", "/leave/apply", "/leave/my", "/leave/approvals", "/leave/calendar",
              "/admin/employees", "/admin/leave-types", "/admin/holidays", "/owner/organizations"]
 POST_ACTIONS = ["/leave/1/approve", "/admin/leave-types/1/edit", "/admin/leave-types/1/delete",
-                "/admin/holidays/1/delete", "/admin/holidays/weekend", "/owner/organizations/1/approve"]
+                "/admin/holidays/1/delete", "/admin/holidays/weekend", "/owner/organizations/1/suspend"]
 
 
 @pytest.mark.parametrize("url", GET_PAGES)
@@ -97,7 +97,7 @@ def test_same_holiday_date_allowed_in_two_orgs(login_as, factory, world):
 def test_members_of_a_suspended_org_are_logged_out(login_as, factory, world):
     emp = login_as("emp@alpha.io")
     assert emp.get("/dashboard").status_code == 200
-    factory.update(Organization, world.a, status="rejected")
+    factory.update(Organization, world.a, status="suspend")
     r = emp.get("/dashboard")
     assert r.status_code == 302 and "/login" in r.headers["Location"]
 

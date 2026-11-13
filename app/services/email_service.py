@@ -106,14 +106,6 @@ def notify_decision(req):
     )
 
 
-def notify_org_approved(org):
-    admin = User.query.filter_by(organization_id=org.id, role="org_admin").first()
-    if admin and admin.email_verified:
-        _send(
-            admin.email,
-            "Your LeaveOk organization is approved",
-            f"Good news, {org.name} is approved. You can log in to LeaveOk now.",
-        )
 
 def _reset_serializer():
     return URLSafeTimedSerializer(current_app.config["SECRET_KEY"], salt="reset-password")
@@ -146,5 +138,46 @@ def read_reset_token(token):
         return None
     user = db.session.get(User, data.get("id"))
     if user and user.password_hash[-12:] == data.get("fp"):
+        return user
+    return None
+INVITE_DAYS = 7
+
+
+def _invite_serializer():
+    return URLSafeTimedSerializer(current_app.config["SECRET_KEY"], salt="invite")
+
+
+def can_send_invite(user):
+    return can_send_verification(user)
+
+
+def send_invite_email(user, org_name):
+    user.verification_sent_at = datetime.utcnow()
+    db.session.commit()
+    safe_org = " ".join(str(org_name).split())[:80]          # one clean line, safe in an email subject
+    # The token carries a fingerprint of the current password, so it stops working once they join.
+    token = _invite_serializer().dumps({"id": user.id, "fp": user.password_hash[-12:]})
+    link = url_for("auth.accept_invite", token=token, _external=True)
+    return _send(
+        user.email,
+        f"You are invited to join {safe_org} on LeaveOk",
+        f"Hello,\n\nYou have been invited to join {safe_org} on LeaveOk.\n\n"
+        f"Click this link to enter your details and choose a password (valid for {INVITE_DAYS} days):\n{link}\n\n"
+        "If you did not expect this invitation, you can ignore this email.",
+    )
+
+
+def read_invite_token(token):
+    try:
+        data = _invite_serializer().loads(token, max_age=60 * 60 * 24 * INVITE_DAYS)
+    except BadSignature:  # also covers expired links
+        return None
+    user = db.session.get(User, data.get("id"))
+    if (
+        user
+        and user.invite_pending
+        and user.is_active
+        and user.password_hash[-12:] == data.get("fp")
+    ):
         return user
     return None

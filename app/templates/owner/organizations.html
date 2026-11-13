@@ -4,6 +4,7 @@
 {% block content %}
 <div class="card">
   <h2>Organizations</h2>
+  <p class="muted">Anyone can create an organization. Use Suspend only to stop abuse.</p>
   <div class="cal-wrap">
   <table>
     <tr><th>Organization</th><th>Type</th><th>Admin</th><th>Email</th><th>Status</th><th></th></tr>
@@ -14,19 +15,19 @@
       <td>{{ o.org_type }}</td>
       <td>{{ a.name if a else '-' }}</td>
       <td>{{ a.email if a else '-' }}</td>
-      <td><span class="badge {{ 'approved' if o.status == 'active' else o.status }}">{{ o.status }}</span></td>
+      <td><span class="badge {{ 'approved' if o.status == 'active' else 'rejected' }}">{{ o.status }}</span></td>
       <td>
         {% if o.id != current_user.organization_id %}
-          {% if o.status != 'active' %}
-          <form method="POST" action="{{ url_for('owner.decide', org_id=o.id, action='approve') }}" class="inline">
+          {% if o.status == 'active' %}
+          <form method="POST" action="{{ url_for('owner.decide', org_id=o.id, action='suspend') }}" class="inline"
+                onsubmit="return confirm('Suspend this organization? Nobody in it will be able to log in.')">
             <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-            <button class="btn-sm ok">Approve</button>
+            <button class="btn-sm no">Suspend</button>
           </form>
-          {% endif %}
-          {% if o.status != 'rejected' %}
-          <form method="POST" action="{{ url_for('owner.decide', org_id=o.id, action='reject') }}" class="inline">
+          {% else %}
+          <form method="POST" action="{{ url_for('owner.decide', org_id=o.id, action='reactivate') }}" class="inline">
             <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-            <button class="btn-sm no">Reject</button>
+            <button class="btn-sm ok">Reactivate</button>
           </form>
           {% endif %}
         {% endif %}

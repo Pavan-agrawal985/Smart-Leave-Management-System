@@ -1,0 +1,20 @@
+{% extends "auth_base.html" %}
+{% block title %}Join {{ org.name }} - LeaveOk{% endblock %}
+{% block auth %}
+<h1>Join {{ org.name }}</h1>
+<p class="muted">You were invited as <b>{{ email }}</b>. Enter your details and choose your own password.</p>
+<form method="POST">
+  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+  <label for="name">Your full name</label>
+  <input id="name" name="name" value="{{ name }}" autocomplete="name" required maxlength="100">
+
+  <label for="password">Password (8-16 characters: upper, lower, number, symbol)</label>
+  <input id="password" type="password" name="password" autocomplete="new-password" required minlength="8" maxlength="16">
+
+  <label for="confirm">Repeat the password</label>
+  <input id="confirm" type="password" name="confirm" autocomplete="new-password" required minlength="8" maxlength="16">
+
+  <button type="submit">Create my account</button>
+</form>
+{% endblock %}

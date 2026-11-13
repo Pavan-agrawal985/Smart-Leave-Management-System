@@ -4,7 +4,6 @@ from flask import Blueprint, render_template, redirect, url_for, flash, abort
 from flask_login import login_required, current_user
 from app.extensions import db
 from app.models import Organization, User
-from app.services.email_service import notify_org_approved
 
 bp = Blueprint("owner", __name__, url_prefix="/owner")
 
@@ -34,7 +33,7 @@ def organizations():
 @login_required
 @owner_required
 def decide(org_id, action):
-    if action not in ("approve", "reject"):
+    if action not in ("suspend", "reactivate"):
         abort(404)
     org = db.session.get(Organization, org_id)
     if org is None:
@@ -43,9 +42,7 @@ def decide(org_id, action):
         flash("You cannot change your own organization.")
         return redirect(url_for("owner.organizations"))
 
-    org.status = "active" if action == "approve" else "rejected"
+    org.status = "suspended" if action == "suspend" else "active"
     db.session.commit()
-    if action == "approve":
-        notify_org_approved(org)
     flash(f"{org.name} is now {org.status}.", "ok")
     return redirect(url_for("owner.organizations"))

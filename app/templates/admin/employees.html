@@ -3,18 +3,16 @@
 {% block wrap %}wide{% endblock %}
 {% block content %}
 <div class="card">
-  <h2>Add employee</h2>
+  <h2>Invite someone</h2>
+  <p class="muted">They get an email with a link. They enter their own details and choose their own password.</p>
   <form method="POST">
     <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
 
-    <label>Name</label>
-    <input name="name" required>
+    <label>Name (optional)</label>
+    <input name="name" maxlength="100">
 
     <label>Email</label>
     <input type="email" name="email" required>
-
-    <label>Temporary password (8-16 characters: upper, lower, number, symbol)</label>
-    <input type="password" name="password" required minlength="8" maxlength="16">
 
     <label>Role</label>
     <select name="role">
@@ -30,7 +28,7 @@
       {% endfor %}
     </select>
 
-    <button type="submit">Add employee</button>
+    <button type="submit">Send invitation</button>
   </form>
 </div>
 
@@ -38,7 +36,7 @@
   <h2>People in your organization</h2>
   <div class="cal-wrap">
   <table>
-    <tr><th>Name</th><th>Email</th><th>Role and manager</th><th>Status</th><th></th></tr>
+    <tr><th>Name</th><th>Email</th><th>Role and manager</th><th>Status</th><th>Joined</th><th></th></tr>
     {% for u in users %}
     <tr class="{{ '' if u.is_active else 'inactive' }}">
       <td>{{ u.name }}</td>
@@ -46,6 +44,7 @@
       {% if u.role == 'org_admin' %}
         <td>Organization admin</td>
         <td><span class="badge approved">active</span></td>
+        <td>{{ u.created_at.strftime('%d %b %Y') if u.created_at else '-' }}</td>
         <td></td>
       {% else %}
         <td>
@@ -66,8 +65,19 @@
             <button class="btn-sm ok">Save</button>
           </form>
         </td>
-        <td><span class="badge {{ 'approved' if u.is_active else 'rejected' }}">{{ 'active' if u.is_active else 'inactive' }}</span></td>
         <td>
+          {% if not u.is_active %}<span class="badge rejected">inactive</span>
+          {% elif u.invite_pending %}<span class="badge pending">invited</span>
+          {% else %}<span class="badge approved">active</span>{% endif %}
+        </td>
+        <td>{{ '-' if u.invite_pending else (u.created_at.strftime('%d %b %Y') if u.created_at else '-') }}</td>
+        <td>
+          {% if u.invite_pending and u.is_active %}
+          <form method="POST" action="{{ url_for('admin.resend_invite', user_id=u.id) }}" class="inline">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <button class="btn-sm ok">Resend invite</button>
+          </form>
+          {% endif %}
           {% if u.is_active %}
           <form method="POST" action="{{ url_for('admin.employee_status', user_id=u.id, action='deactivate') }}"
                 onsubmit="return confirm('Deactivate this person? They will not be able to log in.')" class="inline">

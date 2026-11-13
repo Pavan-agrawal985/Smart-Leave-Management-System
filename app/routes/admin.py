@@ -5,8 +5,7 @@ from flask_login import login_required, current_user
 from app.extensions import db
 from app.models import User, LeaveType, LeaveRequest, Holiday, Organization
 from app.services.validation import check_email, check_password
-from app.services.email_service import send_verification_email
-
+from app.services.email_service import send_invite_email, can_send_invite
 bp = Blueprint("admin", __name__, url_prefix="/admin")
 
 
@@ -20,7 +19,6 @@ def org_admin_required(f):
 
 
 # ---------------------------------------------------------------- employees
-
 @bp.route("/employees", methods=["GET", "POST"])
 @login_required
 @org_admin_required
@@ -28,9 +26,8 @@ def employees():
     org_id = current_user.organization_id
 
     if request.method == "POST":
-        name = request.form.get("name", "").strip()
+        name = " ".join(request.form.get("name", "").split())
         email = request.form.get("email", "").strip().lower()
-        password = request.form.get("password", "")
         role = request.form.get("role", "employee")
         manager_id = request.form.get("manager_id", "")
 
@@ -39,35 +36,38 @@ def employees():
 
         manager = None
         if manager_id.isdigit():
-            manager = User.query.filter_by(id=int(manager_id), organization_id=org_id).first()
+            manager = User.query.filter_by(
+                id=int(manager_id), organization_id=org_id, is_active=True
+            ).first()
+            if manager and manager.role not in ("org_admin", "manager"):
+                manager = None
 
         email, email_error = check_email(email)
-        password_error = check_password(password)
 
-        if not (name and password):
-            flash("Name, email and password are required.")
-        elif email_error:
+        if email_error:
             flash(email_error)
-        elif password_error:
-            flash(password_error)
+        elif len(name) > 100:
+            flash("Name is too long.")
         elif User.query.filter_by(email=email).first():
             flash("Email already registered.")
         else:
             user = User(
                 organization_id=org_id,
-                name=name,
+                name=name or email.split("@")[0],
                 email=email,
                 role=role,
                 manager_id=manager.id if manager else None,
                 email_verified=False,
+                invite_pending=True,
             )
-            user.set_password(password)
+            user.set_unusable_password()
             db.session.add(user)
             db.session.commit()
-            if send_verification_email(user):
-                flash("Employee added. A verification link was emailed to them.", "ok")
+            org = db.session.get(Organization, org_id)
+            if send_invite_email(user, org.name):
+                flash(f"Invitation sent to {email}. They set their own details and password.", "ok")
             else:
-                flash("Employee added, but the verification email failed. They can press 'Resend verification email' on the login page.", "ok")
+                flash("Person added, but the invitation email could not be sent. Use 'Resend invite' in the list.", "ok")
             return redirect(url_for("admin.employees"))
 
     users = User.query.filter_by(organization_id=org_id).order_by(User.name).all()
@@ -75,6 +75,24 @@ def employees():
     by_id = {u.id: u for u in users}
     return render_template("admin/employees.html", users=users, managers=managers, by_id=by_id)
 
+
+@bp.route("/employees/<int:user_id>/resend-invite", methods=["POST"])
+@login_required
+@org_admin_required
+def resend_invite(user_id):
+    user = User.query.filter_by(
+        id=user_id, organization_id=current_user.organization_id
+    ).first_or_404()
+    org = db.session.get(Organization, current_user.organization_id)
+
+    if not user.invite_pending:
+        flash("This person has already joined.")
+    elif not can_send_invite(user):
+        flash("An invitation was sent recently. Please wait 10 minutes before sending another.")
+    else:
+        send_invite_email(user, org.name)
+        flash(f"Invitation sent again to {user.email}.", "ok")
+    return redirect(url_for("admin.employees"))
 
 def would_create_loop(user_id, new_manager_id):
     """True if making new_manager_id the boss of user_id would create a reporting loop."""

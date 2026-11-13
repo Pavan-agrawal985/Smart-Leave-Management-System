@@ -2,6 +2,7 @@ import bcrypt
 from datetime import datetime
 from flask_login import UserMixin
 from app.extensions import db, login_manager
+import secrets
 
 
 class User(UserMixin, db.Model):
@@ -29,7 +30,9 @@ class User(UserMixin, db.Model):
         db.Boolean, nullable=False, default=True, server_default=db.text("true")
     )
     reset_sent_at = db.Column(db.DateTime, nullable=True)
-
+    invite_pending = db.Column(
+        db.Boolean, nullable=False, default=False, server_default=db.text("false")
+    )
     def set_password(self, plain):
         self.password_hash = bcrypt.hashpw(
             plain.encode("utf-8"), bcrypt.gensalt()
@@ -38,6 +41,9 @@ class User(UserMixin, db.Model):
     def check_password(self, plain):
         return bcrypt.checkpw(plain.encode("utf-8"), self.password_hash.encode("utf-8"))
 
+    def set_unusable_password(self):
+        """Invited people get a random password nobody knows, until they choose their own."""
+        self.set_password(secrets.token_urlsafe(32))
 
 @login_manager.user_loader
 def load_user(user_id):

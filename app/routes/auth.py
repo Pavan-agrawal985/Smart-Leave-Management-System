@@ -1,4 +1,3 @@
-import os
 from datetime import datetime, timedelta
 from flask import Blueprint, render_template, request, redirect, url_for, flash
 from flask_login import login_user, logout_user, login_required, current_user
@@ -9,6 +8,7 @@ from app.services.validation import check_email, check_password
 from app.services.email_service import (
     send_verification_email, read_verification_token, can_send_verification,
     send_reset_email, read_reset_token, can_send_reset,
+    send_invite_email, read_invite_token, can_send_invite,
 )
 
 bp = Blueprint("auth", __name__)
@@ -17,25 +17,26 @@ MAX_FAILS = 5
 LOCK_MINUTES = 15
 
 
-def _is_owner_email(email):
-    owner = os.environ.get("OWNER_EMAIL", "").strip().lower()
-    return bool(owner) and email == owner
-
-
 @bp.route("/register", methods=["GET", "POST"])
 def register():
     if current_user.is_authenticated:
         return redirect(url_for("main.dashboard"))
 
     if request.method == "POST":
-        org_name = request.form.get("org_name", "").strip()
+        org_name = " ".join(request.form.get("org_name", "").split())
         org_type = request.form.get("org_type", "custom")
-        name = request.form.get("name", "").strip()
+        name = " ".join(request.form.get("name", "").split())
         email = request.form.get("email", "").strip().lower()
         password = request.form.get("password", "")
 
         if not (org_name and name and email and password):
             flash("All fields are required.")
+            return render_template("auth/register.html")
+        if len(org_name) > 150:
+            flash("Organization name is too long.")
+            return render_template("auth/register.html")
+        if len(name) > 100:
+            flash("Name is too long.")
             return render_template("auth/register.html")
 
         email, email_error = check_email(email)
@@ -51,12 +52,7 @@ def register():
             flash("Email already registered.")
             return render_template("auth/register.html")
 
-        is_owner = _is_owner_email(email)
-        org = Organization(
-            name=org_name,
-            org_type=org_type,
-            status="active" if is_owner else "pending",
-        )
+        org = Organization(name=org_name, org_type=org_type, status="active")
         db.session.add(org)
         db.session.flush()  # gives org an id before we save the user
         seed_leave_types(org)
@@ -73,14 +69,7 @@ def register():
         db.session.commit()
 
         send_verification_email(user)
-        if is_owner:
-            flash(f"Account created. Check {email} for the verification link, then log in.", "ok")
-        else:
-            flash(
-                f"Account created. Click the verification link sent to {email}. "
-                "The LeaveOk team will then review and approve your organization.",
-                "ok",
-            )
+        flash(f"Account created. Click the verification link sent to {email}, then log in.", "ok")
         return redirect(url_for("auth.login"))
 
     return render_template("auth/register.html")
@@ -117,11 +106,8 @@ def login():
                 return render_template("auth/login.html", unverified_email=user.email)
 
             org = db.session.get(Organization, user.organization_id)
-            if org.status == "pending":
-                flash("Your organization is waiting for approval by the LeaveOk team. You will get an email when it is approved.")
-                return render_template("auth/login.html")
             if org.status != "active":
-                flash("Your organization request was not approved.")
+                flash("This organization is suspended. Please contact LeaveOk support.")
                 return render_template("auth/login.html")
 
             login_user(user)
@@ -166,6 +152,40 @@ def resend_verification():
     return redirect(url_for("auth.login"))
 
 
+@bp.route("/invite/<token>", methods=["GET", "POST"])
+def accept_invite(token):
+    user = read_invite_token(token)
+    org = db.session.get(Organization, user.organization_id) if user else None
+    if not user or org.status != "active":
+        flash("This invitation is invalid or expired. Ask your administrator to send a new one.")
+        return redirect(url_for("auth.login"))
+
+    if request.method == "POST":
+        name = " ".join(request.form.get("name", "").split())
+        password = request.form.get("password", "")
+        confirm = request.form.get("confirm", "")
+        password_error = check_password(password)
+
+        if not name:
+            flash("Please enter your name.")
+        elif len(name) > 100:
+            flash("Name is too long.")
+        elif password_error:
+            flash(password_error)
+        elif password != confirm:
+            flash("The two passwords do not match.")
+        else:
+            user.name = name
+            user.set_password(password)
+            user.email_verified = True      # the link reached their inbox, so the address is real
+            user.invite_pending = False
+            db.session.commit()
+            flash("Welcome! Your account is ready. You can log in now.", "ok")
+            return redirect(url_for("auth.login"))
+
+    return render_template("auth/accept.html", token=token, org=org, email=user.email, name=user.name)
+
+
 @bp.route("/forgot-password", methods=["GET", "POST"])
 def forgot_password():
     if current_user.is_authenticated:
@@ -174,10 +194,15 @@ def forgot_password():
     if request.method == "POST":
         email = request.form.get("email", "").strip().lower()
         user = User.query.filter_by(email=email).first()
-        if user and user.is_active and can_send_reset(user):
-            send_reset_email(user)
+        if user and user.is_active:
+            if user.invite_pending:                      # they never joined, so resend the invitation
+                if can_send_invite(user):
+                    org = db.session.get(Organization, user.organization_id)
+                    send_invite_email(user, org.name)
+            elif can_send_reset(user):
+                send_reset_email(user)
         flash(
-            "If this email is registered, a reset link was sent. "
+            "If this email is registered, a link was sent. "
             "You can request one every 10 minutes. Check your inbox and spam.",
             "ok",
         )

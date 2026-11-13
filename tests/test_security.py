@@ -34,10 +34,10 @@ def test_employee_cannot_use_admin_actions(login_as, world):
     assert emp.post("/admin/employees", data={"name": "X"}).status_code == 403
 
 
-def test_owner_pages_hidden_from_everyone_else(login_as, world):
+def test_normal_users_cannot_reach_owner_pages(login_as, world):
     for email in ("emp@alpha.io", "admin@alpha.io"):
-        assert login_as(email).get("/owner/organizations").status_code == 404
-
+        r = login_as(email).get("/owner/organizations")
+        assert r.status_code == 302 and "/owner/login" in r.headers["Location"]
 
 def test_menu_matches_role(login_as, factory, world):
     emp = login_as("emp@alpha.io").get("/dashboard").data

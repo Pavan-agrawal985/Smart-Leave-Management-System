@@ -1,7 +1,5 @@
-import os
 from flask import Flask
 from flask_compress import Compress
-from flask_login import current_user
 from werkzeug.middleware.proxy_fix import ProxyFix
 from config import Config
 from app.extensions import db, migrate, csrf, login_manager
@@ -9,7 +7,7 @@ from app.extensions import db, migrate, csrf, login_manager
 
 def create_app(config_class=Config):
     app = Flask(__name__)
-    app.config.from_object(config_class)    
+    app.config.from_object(config_class)
     app.wsgi_app = ProxyFix(app.wsgi_app, x_proto=1, x_host=1)
 
     db.init_app(app)
@@ -30,18 +28,14 @@ def create_app(config_class=Config):
 
     @app.context_processor
     def inject_owner():
-        owner_email = os.environ.get("OWNER_EMAIL", "").strip().lower()
-        is_owner = bool(
-            owner_email
-            and current_user.is_authenticated
-            and current_user.email.lower() == owner_email
-        )
-        return {"is_owner": is_owner}
+        return {"owner_session": owner.owner_logged_in()}
 
     @app.route("/health")
     def health():
         db.session.execute(db.text("SELECT 1"))
         return "Database connected"
+
     from app.cli import register_commands
     register_commands(app)
+
     return app

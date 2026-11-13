@@ -27,3 +27,20 @@ def check_password(pw):
     if not re.search(r"[^A-Za-z0-9]", pw):
         return "Password needs at least one special symbol, like @ # $ % !"
     return None
+
+def owner_password_error(pw):
+    """The owner account is more powerful, so its password rules are stricter."""
+    pw = pw or ""
+    if not 12 <= len(pw) <= 72 or len(pw.encode("utf-8")) > 72:
+        return "The owner password must be 12 to 72 characters long."
+    if " " in pw:
+        return "The owner password cannot contain spaces."
+    if not re.search(r"[a-z]", pw):
+        return "The owner password needs a lowercase letter."
+    if not re.search(r"[A-Z]", pw):
+        return "The owner password needs an uppercase letter."
+    if not re.search(r"[0-9]", pw):
+        return "The owner password needs a number."
+    if not re.search(r"[^A-Za-z0-9]", pw):
+        return "The owner password needs a special symbol."
+    return None

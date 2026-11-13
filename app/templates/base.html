@@ -40,7 +40,10 @@
   <nav class="nav" aria-label="Main">
     <a class="brand" href="/"><img src="{{ url_for('static', filename='logo.svg') }}" width="32" height="32" alt="">LeaveOk</a>
     <div class="nav-links" id="nav-links">
-      {% if current_user.is_authenticated %}
+      {% if owner_session %}
+        <a href="{{ url_for('owner.organizations') }}" class="{{ 'active' if ep == 'owner.organizations' else '' }}">Organizations</a>
+        <a href="{{ url_for('owner.logout') }}">Logout (owner)</a>
+      {% elif current_user.is_authenticated %}
         <a href="{{ url_for('main.dashboard') }}" class="{{ 'active' if ep == 'main.dashboard' else '' }}">Dashboard</a>
         <a href="{{ url_for('leave.apply') }}" class="{{ 'active' if ep == 'leave.apply' else '' }}">Apply</a>
         <a href="{{ url_for('leave.my') }}" class="{{ 'active' if ep == 'leave.my' else '' }}">My leaves</a>
@@ -53,9 +56,6 @@
           <a href="{{ url_for('admin.employees') }}" class="{{ 'active' if ep == 'admin.employees' else '' }}">Employees</a>
           <a href="{{ url_for('admin.leave_types') }}" class="{{ 'active' if ep == 'admin.leave_types' else '' }}">Leave types</a>
           <a href="{{ url_for('admin.holidays') }}" class="{{ 'active' if ep == 'admin.holidays' else '' }}">Holidays</a>
-        {% endif %}
-        {% if is_owner %}
-          <a href="{{ url_for('owner.organizations') }}" class="{{ 'active' if ep == 'owner.organizations' else '' }}">Owner</a>
         {% endif %}
         <a href="{{ url_for('auth.logout') }}">Logout ({{ current_user.name }})</a>
       {% else %}

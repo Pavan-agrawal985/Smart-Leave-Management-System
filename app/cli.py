@@ -6,8 +6,9 @@ from app.extensions import db
 from app.models import Department, Holiday, LeaveRequest, LeaveType, Organization, User
 from app.services.leave_service import working_days
 from app.services.org_templates import seed_leave_types
-from app.services.validation import check_password
+import bcrypt
 
+from app.services.validation import check_password, owner_password_error
 DEMO_ORG = "Demo University"
 
 PEOPLE = [  # (tag, name, role, reports to)
@@ -132,3 +133,14 @@ def register_commands(app):
         db.session.delete(org)
         db.session.commit()
         click.echo("Demo University deleted.")
+
+    @app.cli.command("owner-hash")
+    @click.option("--password", prompt=True, hide_input=True, confirmation_prompt=True)
+    def owner_hash(password):
+        """Print the value to store as OWNER_PASSWORD_HASH."""
+        error = owner_password_error(password)
+        if error:
+            raise click.ClickException(error)
+        hashed = bcrypt.hashpw(password.encode("utf-8"), bcrypt.gensalt()).decode("utf-8")
+        click.echo("Copy the line below into your settings as OWNER_PASSWORD_HASH:")
+        click.echo(hashed)

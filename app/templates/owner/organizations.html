@@ -2,37 +2,57 @@
 {% block title %}Owner - LeaveOk{% endblock %}
 {% block wrap %}wide{% endblock %}
 {% block content %}
-<div class="card">
+<div class="welcome">
+  <div>
+    <h1>Platform overview</h1>
+    <p class="muted">Organization-level details only. Individual employees and their leave are never shown here.</p>
+  </div>
+</div>
+
+<div class="tiles">
+  <div class="tile"><div class="tile-top"><span>Organizations</span></div><div class="tile-num"><b>{{ stats.organizations }}</b></div></div>
+  <div class="tile"><div class="tile-top"><span>Active</span></div><div class="tile-num"><b>{{ stats.active }}</b></div></div>
+  <div class="tile"><div class="tile-top"><span>Suspended</span></div><div class="tile-num"><b>{{ stats.suspended }}</b></div></div>
+  <div class="tile"><div class="tile-top"><span>People</span></div><div class="tile-num"><b>{{ stats.people }}</b></div></div>
+  <div class="tile"><div class="tile-top"><span>Leave requests</span></div><div class="tile-num"><b>{{ stats.requests }}</b></div></div>
+  <div class="tile"><div class="tile-top"><span>Pending</span></div><div class="tile-num"><b>{{ stats.pending }}</b></div></div>
+  <div class="tile"><div class="tile-top"><span>New this week</span></div><div class="tile-num"><b>{{ stats.new_week }}</b></div></div>
+</div>
+
+<div class="card" style="margin-top:20px">
   <h2>Organizations</h2>
-  <p class="muted">Anyone can create an organization. Use Suspend only to stop abuse.</p>
+  <p class="muted">Suspend only to stop abuse. Nobody in a suspended organization can log in.</p>
   <div class="cal-wrap">
   <table>
-    <tr><th>Organization</th><th>Type</th><th>Admin</th><th>Email</th><th>Status</th><th></th></tr>
-    {% for o in orgs %}
-    {% set a = admins.get(o.id) %}
+    <tr><th>Organization</th><th>Type</th><th>Admin</th><th>Admin email</th><th>People</th><th>Requests</th><th>Last activity</th><th>Created</th><th>Status</th><th></th></tr>
+    {% for r in rows %}
     <tr>
-      <td>{{ o.name }}</td>
-      <td>{{ o.org_type }}</td>
-      <td>{{ a.name if a else '-' }}</td>
-      <td>{{ a.email if a else '-' }}</td>
-      <td><span class="badge {{ 'approved' if o.status == 'active' else 'rejected' }}">{{ o.status }}</span></td>
+      <td>{{ r.org.name }}</td>
+      <td>{{ r.org.org_type }}</td>
+      <td>{{ r.admin_name }}</td>
+      <td>{{ r.admin_email }}</td>
+      <td>{{ r.people }}</td>
+      <td>{{ r.requests }}</td>
+      <td>{{ r.last_activity.strftime('%d %b %Y') if r.last_activity else '-' }}</td>
+      <td>{{ r.org.created_at.strftime('%d %b %Y') if r.org.created_at else '-' }}</td>
+      <td><span class="badge {{ 'approved' if r.org.status == 'active' else 'rejected' }}">{{ r.org.status }}</span></td>
       <td>
-        {% if o.id != current_user.organization_id %}
-          {% if o.status == 'active' %}
-          <form method="POST" action="{{ url_for('owner.decide', org_id=o.id, action='suspend') }}" class="inline"
-                onsubmit="return confirm('Suspend this organization? Nobody in it will be able to log in.')">
-            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-            <button class="btn-sm no">Suspend</button>
-          </form>
-          {% else %}
-          <form method="POST" action="{{ url_for('owner.decide', org_id=o.id, action='reactivate') }}" class="inline">
-            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-            <button class="btn-sm ok">Reactivate</button>
-          </form>
-          {% endif %}
+        {% if r.org.status == 'active' %}
+        <form method="POST" action="{{ url_for('owner.decide', org_id=r.org.id, action='suspend') }}" class="inline"
+              onsubmit="return confirm('Suspend this organization? Nobody in it will be able to log in.')">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+          <button class="btn-sm no">Suspend</button>
+        </form>
+        {% else %}
+        <form method="POST" action="{{ url_for('owner.decide', org_id=r.org.id, action='reactivate') }}" class="inline">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+          <button class="btn-sm ok">Reactivate</button>
+        </form>
         {% endif %}
       </td>
     </tr>
+    {% else %}
+    <tr><td colspan="10" class="muted">No organizations yet.</td></tr>
     {% endfor %}
   </table>
   </div>

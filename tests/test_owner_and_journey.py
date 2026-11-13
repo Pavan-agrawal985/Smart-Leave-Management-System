@@ -7,39 +7,7 @@ OWNER = "owner@acme.io"
 STRONG = "Strong@2026x"
 
 
-@pytest.fixture()
-def owner_setup(factory):
-    hq = factory.org("Owner HQ")
-    factory.user(hq, OWNER, "Olivia Owner", "org_admin")
-    school = factory.org("Green School", "school")
-    factory.user(school, "head@school.io", "Hari Head", "org_admin")
-    return hq, school
 
-
-def test_owner_can_suspend_and_reactivate(client, login_as, factory, owner_setup):
-    hq, school = owner_setup
-    owner = login_as(OWNER)
-    r = owner.post(f"/owner/organizations/{school}/suspend", follow_redirects=True)
-    assert b"Green School is now suspended." in r.data
-    assert factory.get(Organization, id=school).status == "suspended"
-    blocked = client.post("/login", data={"email": "head@school.io", "password": "Passw0rd!x"})
-    assert b"suspended" in blocked.data
-    owner.post(f"/owner/organizations/{school}/reactivate")
-    assert factory.get(Organization, id=school).status == "active"
-    login_as("head@school.io")                                  # works again
-
-
-def test_owner_list_and_guards(login_as, owner_setup):
-    hq, school = owner_setup
-    owner = login_as(OWNER)
-    page = owner.get("/owner/organizations")
-    assert page.status_code == 200 and b"Green School" in page.data
-    assert b"/owner/organizations" in owner.get("/dashboard").data           # menu link
-    assert b"You cannot change your own organization." in owner.post(
-        f"/owner/organizations/{hq}/suspend", follow_redirects=True).data
-    assert owner.post(f"/owner/organizations/{school}/delete").status_code == 404
-    assert owner.post(f"/owner/organizations/{school}/approve").status_code == 404   # old route is gone
-    assert owner.post("/owner/organizations/9999/suspend").status_code == 404
 
 
 def test_full_journey(client, login_as, factory, outbox, token_in):

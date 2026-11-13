@@ -29,13 +29,10 @@ def test_app_pages_have_the_responsive_shell(login_as, world, url):
     check_shell(r.data)
 
 
-def test_owner_page_has_the_shell(login_as, factory):
-    hq = factory.org("Owner HQ")
-    factory.user(hq, "owner@acme.io", "Olivia Owner", "org_admin")
-    r = login_as("owner@acme.io").get("/owner/organizations")
-    assert r.status_code == 200
-    check_shell(r.data)
-
+def test_owner_pages_have_the_shell(owner_client, client, world):
+    for page in (owner_client.get("/owner/organizations"), client.get("/owner/login")):
+        assert page.status_code == 200
+        check_shell(page.data)
 
 @pytest.mark.parametrize("path,kind", [("logo.svg", "svg"), ("favicon.svg", "svg"), ("style.css", "css")])
 def test_static_assets_are_served(client, path, kind):

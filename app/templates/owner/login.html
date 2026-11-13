@@ -1,0 +1,17 @@
+{% extends "base.html" %}
+{% block title %}Owner login - LeaveOk{% endblock %}
+{% block wrap %}narrow{% endblock %}
+{% block content %}
+<div class="card">
+  <h2>Owner login</h2>
+  <p class="muted">For the LeaveOk owner only.</p>
+  <form method="POST">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    <label for="email">Owner email</label>
+    <input id="email" type="email" name="email" autocomplete="username" required>
+    <label for="password">Password</label>
+    <input id="password" type="password" name="password" autocomplete="current-password" required>
+    <button type="submit">Log in</button>
+  </form>
+</div>
+{% endblock %}

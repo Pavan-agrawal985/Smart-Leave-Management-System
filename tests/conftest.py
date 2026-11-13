@@ -18,6 +18,8 @@ from app.services.org_templates import seed_leave_types  # noqa: E402
 
 PASSWORD = "Passw0rd!x"
 OWNER_EMAIL = "owner@acme.io"
+OWNER_PASSWORD = "Owner#Pass2026x"
+OWNER_HASH = bcrypt.hashpw(OWNER_PASSWORD.encode("utf-8"), bcrypt.gensalt(rounds=4)).decode("utf-8")
 
 
 @pytest.fixture(autouse=True)
@@ -27,6 +29,7 @@ def fast_passwords(monkeypatch):
     monkeypatch.setattr(bcrypt, "gensalt", lambda *a, **k: real_gensalt(rounds=4))
 
 class SqliteTestConfig(Config):
+    OWNER_FAIL_DELAY = 0
     TESTING = True
     WTF_CSRF_ENABLED = False
     SQLALCHEMY_ENGINE_OPTIONS = {}
@@ -87,7 +90,7 @@ def outbox(monkeypatch):
     monkeypatch.setattr("app.services.email_service._send", fake_send)
     monkeypatch.setattr("app.routes.auth.check_email", fake_check_email)
     monkeypatch.setattr("app.routes.admin.check_email", fake_check_email)
-    monkeypatch.setenv("OWNER_EMAIL", OWNER_EMAIL)
+    monkeypatch.setenv("OWNER_PASSWORD_HASH", OWNER_HASH)
     return sent
 
 
@@ -197,3 +200,21 @@ def world(factory):
     b_admin = factory.user(b, "admin@beta.io", "Bob Beta", "org_admin")
     return SimpleNamespace(a=a, a_admin=a_admin, a_mgr=a_mgr, a_emp=a_emp,
                            b=b, b_admin=b_admin)
+
+@pytest.fixture()
+def owner_credentials():
+    return SimpleNamespace(email=OWNER_EMAIL, password=OWNER_PASSWORD)
+
+
+@pytest.fixture()
+def owner_client(flask_app):
+    browser = flask_app.test_client()
+    r = browser.post("/owner/login", data={"email": OWNER_EMAIL, "password": OWNER_PASSWORD})
+    assert r.status_code == 302, "owner login failed"
+    return browser
+
+@pytest.fixture(autouse=True)
+def owner_env(monkeypatch):
+    """Tests always use the test owner login, never the real one from .env."""
+    monkeypatch.setenv("OWNER_EMAIL", OWNER_EMAIL)
+    monkeypatch.setenv("OWNER_PASSWORD_HASH", OWNER_HASH)

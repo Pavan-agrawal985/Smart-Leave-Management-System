@@ -4,7 +4,7 @@
 
 **A multi-organization leave management system.** Schools, colleges, banks and offices each get a private workspace with their own people, leave types, holidays and approvals. One application, many institutions, and no organization can ever see another's data.
 
-**Live app:** https://YOUR-APP.vercel.app
+**Live app:** https://smart-leave-management-system-lemon.vercel.app/
 **Demo video:** https://YOUR-VIDEO-LINK
 
 ![Dashboard](docs/screenshots/dashboard.png)

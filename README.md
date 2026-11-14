@@ -4,7 +4,7 @@
 
 **A multi-organization leave management system.** Schools, colleges, banks and offices each get a private workspace with their own people, leave types, holidays and approvals. One application, many institutions, and no organization can ever see another's data.
 
-**Live app:** https://smart-leave-management-system-lemon.vercel.app/
+**Live app:** https://YOUR-APP.vercel.app
 **Demo video:** https://YOUR-VIDEO-LINK
 
 ![Dashboard](docs/screenshots/dashboard.png)
@@ -17,28 +17,31 @@
 2. [Features](#features)
 3. [Tech stack](#tech-stack)
 4. [Architecture](#architecture)
-5. [Data model](#data-model)
-6. [Project structure](#project-structure)
-7. [Roles and permissions](#roles-and-permissions)
-8. [Page map](#page-map)
-9. [How the main flows work](#how-the-main-flows-work)
-10. [Emails the app sends](#emails-the-app-sends)
-11. [Security](#security)
-12. [Design and responsiveness](#design-and-responsiveness)
-13. [Configuration](#configuration)
-14. [Run it locally](#run-it-locally)
-15. [Command line tools](#command-line-tools)
-16. [Testing and CI](#testing-and-ci)
-17. [Deployment](#deployment)
-18. [Screenshots](#screenshots)
-19. [Known limits](#known-limits)
-20. [Roadmap](#roadmap)
+5. [Organization hierarchy](#organization-hierarchy)
+6. [Data model](#data-model)
+7. [Project structure](#project-structure)
+8. [Roles and permissions](#roles-and-permissions)
+9. [Page map](#page-map)
+10. [How the main flows work](#how-the-main-flows-work)
+11. [Emails the app sends](#emails-the-app-sends)
+12. [Security](#security)
+13. [Design and responsiveness](#design-and-responsiveness)
+14. [Configuration](#configuration)
+15. [Run it locally](#run-it-locally)
+16. [Command line tools](#command-line-tools)
+17. [Testing and CI](#testing-and-ci)
+18. [Deployment](#deployment)
+19. [Screenshots](#screenshots)
+20. [Known limits](#known-limits)
+21. [Roadmap](#roadmap)
 
 ---
 
 ## Overview
 
 Every institution manages leave differently. A school has duty leave and Sunday-only weeks, a bank has privilege leave with carry-forward, an office has annual and sick leave with a two-day weekend. LeaveOk handles all of them with **configuration instead of custom code**: each organization chooses a starting template (School, College, Corporate, Bank, or Other) and then edits its own leave types, quotas, weekly offs and holidays.
+
+Every organization follows one clear chain of responsibility: **one administrator, who controls the managers, who control their own employees.**
 
 **The idea in one picture:** a building (the app) with many private flats (organizations). Each flat has its own rules, residents and mail, and the walls between flats are tested automatically.
 
@@ -47,22 +50,24 @@ Every institution manages leave differently. A school has duty leave and Sunday-
 ## Features
 
 ### For organizations
-- **Self-serve sign-up** with real-email checking (the email domain must be able to receive mail) and email verification before the first login
+- **Self-serve sign-up** with real-email checking (the email domain must be able to receive mail) and email verification before the first login. There is no approval step
 - **Starter templates** for School, College, Corporate, Bank and Other, with sensible leave types and weekly offs
-- **Invitation-based onboarding:** the admin enters an email, a role and a manager. The person receives a one-time link, enters their own details and chooses their own password. The admin never sees or sets passwords
-- **People management:** change roles and managers, deactivate and reactivate people, resend invitations, protection against reporting loops, and automatic hand-over of a team when its manager is demoted or deactivated
+- **Invitation-based onboarding:** the administrator invites a manager, or an employee under a chosen manager. The person receives a one-time link, enters their own details and chooses their own password. The administrator never sees or sets passwords
+- **People management:** change roles and managers, deactivate and reactivate people, resend invitations. A manager with employees cannot be deactivated or turned into an employee until the team is reassigned
+- **Administrator overview:** counts of managers, employees, people still invited, and requests waiting for approval
 
 ### For leave
 - **Configurable leave types and quotas** per organization
 - **Weekly offs and holidays** per organization. Leave is counted in **working days**, so weekends and holidays are never deducted
 - **Checks on every request:** valid dates, no overlap with existing leave, enough balance, and not longer than a year
-- **Approvals:** the employee's manager approves, or the organization admin when there is no manager. Nobody can approve their own request, and a decision is final
+- **A strict approval chain:** an employee's leave is approved by their manager only, and a manager's leave is approved by the administrator only. Nobody approves their own request, and a decision is final
+- **The administrator takes no leave**, because nobody sits above them
 - **Team calendar:** a monthly view of who is away, with holidays and weekly offs highlighted
 - **Reports and CSV export:** filter by year, status, leave type and person. Managers see only their team. Exports open cleanly in Excel
 
 ### For the platform owner
-- **A separate owner login** (no sign-up, no organization) whose email and password hash live in environment settings
-- **Platform overview:** totals, and a list of every organization with its admin, number of people, number of leave requests and last activity
+- **A separate owner login** (no sign-up, no organization of their own) whose email and password hash live in environment settings
+- **Platform overview:** totals, and a list of every organization with its administrator, number of people, number of leave requests and last activity
 - **Suspend and reactivate** an organization to stop abuse
 - The owner sees organization-level facts only, never individual employees or their leave
 
@@ -126,6 +131,27 @@ flowchart LR
 
 ---
 
+## Organization hierarchy
+
+```mermaid
+flowchart TD
+    OW["Platform owner"] -.->|"can suspend if abused"| ORG
+    subgraph ORG["One organization"]
+        A["Administrator<br/>one per organization<br/>takes no leave"] -->|"approves leave of"| M["Managers"]
+        M -->|"approve leave of"| E["Their own employees"]
+    end
+```
+
+| Person | Applies for leave | Their leave is approved by | Leave they approve | People they control |
+|---|:---:|---|---|---|
+| **Administrator** | No | Nobody | Managers' leave only | All managers and employees |
+| **Manager** | Yes | The administrator | Their own employees' leave only | Their own employees |
+| **Employee** | Yes | Their manager | None | None |
+
+An employee always has a manager. An employee without an active manager cannot apply for leave until the administrator assigns one.
+
+---
+
 ## Data model
 
 ```mermaid
@@ -184,13 +210,15 @@ erDiagram
     }
 ```
 
+In `USERS`, `manager_id` means "reports to": managers report to the administrator, and employees report to a manager.
+
 **Life of a leave request:**
 
 ```mermaid
 stateDiagram-v2
-    [*] --> Pending: employee applies
-    Pending --> Approved: manager or admin approves
-    Pending --> Rejected: manager or admin rejects
+    [*] --> Pending: applicant submits
+    Pending --> Approved: the right approver approves
+    Pending --> Rejected: the right approver rejects
     Approved --> [*]
     Rejected --> [*]
 ```
@@ -212,6 +240,7 @@ Smart-Leave-Management-System/
 ├── .env.example                 # the settings the app needs, with fake values
 ├── README.md
 ├── .github/workflows/tests.yml  # runs the tests on every push
+├── docs/screenshots/            # images used in this README
 │
 ├── app/
 │   ├── __init__.py              # creates the Flask app, registers everything
@@ -227,12 +256,12 @@ Smart-Leave-Management-System/
 │   │   ├── auth.py              # sign-up, login, verify, invite, forgot and reset password
 │   │   ├── main.py              # landing page, dashboard, robots.txt, sitemap.xml
 │   │   ├── leave.py             # apply, my leaves, approvals, calendar
-│   │   ├── admin.py             # employees, leave types, holidays
+│   │   ├── admin.py             # people, leave types, holidays
 │   │   ├── reports.py           # reports and CSV export
 │   │   └── owner.py             # owner login and platform overview
 │   │
 │   ├── services/                # business rules
-│   │   ├── leave_service.py     # working days, balances, overlaps, who can approve
+│   │   ├── leave_service.py     # working days, balances, overlaps, who approves whom
 │   │   ├── calendar_service.py  # monthly team calendar
 │   │   ├── report_service.py    # report rows, summary, safe CSV
 │   │   ├── email_service.py     # sending mail and signed links
@@ -243,11 +272,11 @@ Smart-Leave-Management-System/
 │   ├── templates/               # Jinja pages
 │   │   ├── base.html            # layout, menu, dark mode, footer
 │   │   ├── landing.html         # public home page
-│   │   ├── dashboard.html
+│   │   ├── dashboard.html       # administrator overview, or balance tiles
 │   │   ├── auth_base.html       # split layout for login and sign-up pages
 │   │   ├── auth/                # login, register, accept, forgot, reset
 │   │   ├── leave/               # apply, my, approvals, calendar
-│   │   ├── admin/               # employees, leave_types, holidays
+│   │   ├── admin/               # employees (People), leave_types, holidays
 │   │   ├── reports/             # index
 │   │   └── owner/               # login, organizations
 │   │
@@ -259,10 +288,11 @@ Smart-Leave-Management-System/
 └── tests/                       # automated test suite
     ├── conftest.py              # shared fixtures and test data builders
     ├── test_validation.py       # password and email rules
-    ├── test_leave_service.py    # working days, balances, approval rules
+    ├── test_leave_service.py    # working days, balances, overlaps
+    ├── test_hierarchy.py        # who approves whom, and who controls whom
     ├── test_auth.py             # sign-up, verification, login, lockout
     ├── test_invites.py          # invitation-based onboarding
-    ├── test_accounts.py         # forgot password, people management
+    ├── test_accounts.py         # forgot password
     ├── test_leave_flow.py       # apply, approve, calendar
     ├── test_admin.py            # leave types, holidays, weekly offs
     ├── test_reports.py          # reports and CSV
@@ -278,17 +308,17 @@ Smart-Leave-Management-System/
 
 ## Roles and permissions
 
-| Action | Employee | Manager | Org admin | Owner |
+| Action | Employee | Manager | Administrator | Owner |
 |---|:---:|:---:|:---:|:---:|
-| Apply for leave, see own leaves and balance | Yes | Yes | Yes | |
+| Apply for leave, see own leaves and balance | Yes | Yes | No | |
 | See the team calendar | Own team | Own team | Everyone | |
-| Approve or reject leave | | Own team | Everyone | |
+| Approve or reject leave | | Their own employees | Managers only | |
 | Reports and CSV export | | Own team | Everyone | |
-| Invite people, change roles and managers, deactivate | | | Yes | |
+| Invite managers and employees, change roles and managers, deactivate | | | Yes | |
 | Edit leave types, quotas, holidays and weekly offs | | | Yes | |
 | See all organizations, suspend or reactivate one | | | | Yes |
 
-Nobody can approve their own request. An organization admin cannot be edited or deactivated from the Employees page.
+Nobody can approve their own request. The administrator account cannot be edited or deactivated from the People page.
 
 ---
 
@@ -297,9 +327,10 @@ Nobody can approve their own request. An organization admin cannot be edited or 
 | Area | Pages |
 |---|---|
 | Public | `/` landing, `/login`, `/register`, `/forgot-password`, `/reset-password/<token>`, `/verify/<token>`, `/invite/<token>`, `/robots.txt`, `/sitemap.xml`, `/health` |
-| Everyone signed in | `/dashboard`, `/leave/apply`, `/leave/my`, `/leave/calendar` |
-| Managers and admins | `/leave/approvals`, `/reports/`, `/reports/export.csv` |
-| Org admins | `/admin/employees`, `/admin/leave-types`, `/admin/holidays` |
+| Everyone signed in | `/dashboard`, `/leave/calendar` |
+| Managers and employees | `/leave/apply`, `/leave/my` |
+| Managers and administrators | `/leave/approvals`, `/reports/`, `/reports/export.csv` |
+| Administrators | `/admin/employees` (People), `/admin/leave-types`, `/admin/holidays` |
 | Owner | `/owner/login`, `/owner/organizations` |
 
 ---
@@ -307,20 +338,24 @@ Nobody can approve their own request. An organization admin cannot be edited or 
 ## How the main flows work
 
 **Creating an organization**
-1. Someone signs up with an organization name, a type, their name, a real email and a strong password.
+1. Someone signs up with an organization name, a type, their name, a real email and a strong password. They become the organization's administrator.
 2. They click the verification link sent to their inbox, then log in. There is no approval step.
 3. Default leave types and weekly offs for the chosen type are created automatically.
 
 **Adding people (invitation flow)**
-1. The admin enters an email, a role and a manager. No password is typed.
+1. The administrator invites a **manager** (who reports to the administrator), or an **employee** under a chosen manager. No password is typed.
 2. The person gets an email with a one-time link, valid for 7 days.
 3. They enter their name and choose their own password. Their account is then active.
-4. Until then the admin sees them as *invited*, and can resend the invitation.
+4. Until then the administrator sees them as *invited*, and can resend the invitation.
 
 **Applying and approving**
-1. The employee picks a leave type and dates. The app counts working days, checks overlaps and balance, and saves a *pending* request.
-2. The manager (or the admin, if there is no manager) is told a request is waiting.
-3. They approve or reject. The employee is told the outcome, and the balance updates.
+1. An employee or manager picks a leave type and dates. The app counts working days, checks overlaps and balance, and saves a *pending* request.
+2. The one correct approver is told: an **employee's manager** for an employee's leave, or the **administrator** for a manager's leave.
+3. The approver approves or rejects. The applicant is told the outcome, and the balance updates.
+
+**Changing the team**
+- An employee needs an active manager. A manager who still has active employees cannot be deactivated or changed into an employee. Reassign the team first.
+- Promoting an employee to manager makes them report to the administrator.
 
 **Starter templates**
 
@@ -332,7 +367,7 @@ Nobody can approve their own request. An organization admin cannot be edited or 
 | Bank | Privilege 30, Sick 12, Casual 12 | Sunday |
 | Other | Casual 12, Sick 10 | Saturday and Sunday |
 
-Admins can change all of this afterwards.
+Administrators can change all of this afterwards.
 
 ---
 
@@ -340,11 +375,12 @@ Admins can change all of this afterwards.
 
 | When | Who gets it | What it says |
 |---|---|---|
-| New organization signs up | The new admin | Verification link (valid 2 days) |
-| Admin invites someone | The invited person | Invitation link (valid 7 days, works once) |
+| New organization signs up | The new administrator | Verification link (valid 2 days) |
+| Administrator invites someone | The invited person | Invitation link (valid 7 days, works once) |
 | Forgot password | The person who asked | Reset link (valid 1 hour, works once) |
-| Leave request submitted | The employee's manager, or the admin if there is no manager | "A leave request is waiting for your approval" |
-| Request approved or rejected | The employee who applied | "Your leave request was approved/rejected" |
+| An employee submits leave | That employee's manager | "A leave request is waiting for your approval" |
+| A manager submits leave | The administrator | "A leave request is waiting for your approval" |
+| Request approved or rejected | The person who applied | "Your leave request was approved/rejected" |
 
 **Privacy by design:** notification emails never contain names, dates or leave reasons. They only say that something needs attention, and people log in to see the details. All email passes through one shared sender account, so this keeps customer data out of any mailbox.
 
@@ -357,10 +393,11 @@ Admins can change all of this afterwards.
 - **One-time links:** verification, invitation and reset links are signed, expire, and (for invitations and resets) stop working once used
 - **Lockout and throttling:** 5 wrong passwords lock an account for 15 minutes. Verification, invitation and reset emails are limited to one per 10 minutes. Wrong owner logins wait one second
 - **CSRF protection** on every form, and **role checks** on every protected page
+- **Strict approval rights:** the server checks who may approve each request. The administrator cannot approve employees' leave, a manager cannot approve another team, and nobody approves their own
 - **Tenant isolation:** every query is scoped to the organization. Other organizations' records return "not found"
 - **No secrets in code:** all keys and passwords come from environment variables. `.env` is never committed
 - **Safe CSV export:** cells starting with `=`, `+`, `-` or `@` are neutralized so a spreadsheet cannot run them as formulas
-- **Owner access:** a separate login, an 8-hour session, and a view limited to organization-level information
+- **Owner access:** a separate login with no database account, an 8-hour session, and a view limited to organization-level information
 - **Account control:** deactivating a person ends their open sessions, and suspending an organization blocks everyone in it
 
 ---
@@ -450,14 +487,14 @@ Open http://127.0.0.1:5000. The owner logs in at `/owner/login`. Organizations s
 | `flask db upgrade` | Applies database changes |
 | `flask db migrate -m "message"` | Creates a new migration after a model change |
 | `flask owner-hash` | Creates the value for `OWNER_PASSWORD_HASH` |
-| `flask seed-demo --email you@gmail.com` | Creates "Demo University" with people, holidays and leave requests, using `you+demo-...@gmail.com` addresses |
+| `flask seed-demo --email you@gmail.com` | Creates "Demo University" with an administrator, two managers, five employees, holidays and leave requests, using `you+demo-...@gmail.com` addresses |
 | `flask delete-demo` | Removes the demo organization completely |
 
 ---
 
 ## Testing and CI
 
-The project has **200+ automated tests**. They run on a throwaway in-memory database, never touch real data, never send real emails, and never need the internet.
+The project has **230+ automated tests**. They run on a throwaway in-memory database, never touch real data, never send real emails, and never need the internet.
 
 ```bash
 python -m pytest -q
@@ -466,14 +503,14 @@ python -m pytest -q
 | Area | What is verified |
 |---|---|
 | Validation | Password boundaries and email rules |
-| Leave rules | Working days with weekends and holidays, balances, overlaps, approval rights |
+| Leave rules | Working days with weekends and holidays, balances, overlaps |
+| Hierarchy | Who approves whom, who controls whom, manager and employee rules, administrators taking no leave |
 | Accounts | Sign-up, verification, login lockout, forgot password, invitations |
-| People management | Roles, managers, reporting loops, deactivation and team hand-over |
 | Reports | Filters, team scoping, safe CSV |
 | Owner | Separate login, expiry, platform overview, suspend and reactivate |
 | Security | Login required everywhere, role checks, **isolation between organizations**, CSRF |
 | UI | Every page has the responsive shell, and static files are served |
-| End to end | A full journey from sign-up to an approved leave |
+| End to end | A full journey: sign-up, a manager and an employee join by invitation, and each leave request is approved by the right person |
 
 **GitHub Actions** runs the whole suite on every push and pull request. A green tick means the code is safe to deploy.
 
@@ -497,7 +534,7 @@ The app runs on **free tiers**: Vercel for hosting and Neon for the database.
 
 ## Screenshots
 
-| Landing page | Dashboard |
+| Landing page | Administrator overview |
 |---|---|
 | ![Landing](docs/screenshots/landing.png) | ![Dashboard](docs/screenshots/dashboard.png) |
 
@@ -517,22 +554,24 @@ The app runs on **free tiers**: Vercel for hosting and Neon for the database.
 
 ## Known limits
 
-- Approval is single-step: the reporting manager, or the admin when there is no manager
+- Approval is single-step: an employee's manager, or the administrator for a manager's leave
+- There is exactly one administrator per organization, and no backup approver when a manager or the administrator is away
 - The *carry forward* setting is stored, but unused leave is not yet carried into the next year automatically
 - The Departments table exists, but there is no departments screen yet
 - Email goes through one shared Gmail sender, which has a daily sending limit. This is fine for pilots, not for large customer numbers
 - There is a single owner account
-- Dates are counted per calendar year
+- Leave balances are counted per calendar year
 
 ---
 
 ## Roadmap
 
 - [ ] Custom domain and a transactional email service (better delivery and no shared mailbox)
+- [ ] A backup approver for when a manager or the administrator is on leave
 - [ ] Multi-step approval chains per leave type
 - [ ] Yearly carry-forward of unused leave
 - [ ] Departments and department-level reports
-- [ ] CSV import for adding many employees at once
+- [ ] CSV import for adding many people at once
 - [ ] Cancel or withdraw a leave request
 - [ ] Rate limiting or CAPTCHA on public sign-up
 - [ ] Several owner accounts

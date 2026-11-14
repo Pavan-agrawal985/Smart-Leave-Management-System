@@ -1,7 +1,7 @@
 from flask import Blueprint, Response, render_template, redirect, url_for
 from flask_login import login_required, current_user
 from app.extensions import db
-from app.models import Organization
+from app.models import Organization, User
 from app.services.leave_service import get_balances, pending_for
 
 bp = Blueprint("main", __name__)
@@ -48,10 +48,24 @@ def sitemap():
 @login_required
 def dashboard():
     org = db.session.get(Organization, current_user.organization_id)
-    balances = get_balances(current_user)
-    pending_count = 0
-    if current_user.role in ("org_admin", "manager"):
+    balances, stats, pending_count = [], None, 0
+
+    if current_user.role == "org_admin":
+        org_id = current_user.organization_id
         pending_count = len(pending_for(current_user))
+        stats = {
+            "managers": User.query.filter_by(organization_id=org_id, role="manager", is_active=True).count(),
+            "employees": User.query.filter_by(organization_id=org_id, role="employee", is_active=True).count(),
+            "invited": User.query.filter_by(organization_id=org_id, invite_pending=True, is_active=True).count(),
+            "waiting": pending_count,
+        }
+    else:
+        balances = get_balances(current_user)
+        for b in balances:
+            b["pct"] = min(100, round(b["used"] * 100 / b["quota"])) if b["quota"] else 0
+        if current_user.role == "manager":
+            pending_count = len(pending_for(current_user))
+
     return render_template(
-        "dashboard.html", org=org, balances=balances, pending_count=pending_count
+        "dashboard.html", org=org, balances=balances, stats=stats, pending_count=pending_count
     )

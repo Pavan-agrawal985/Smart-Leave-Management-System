@@ -73,18 +73,11 @@ def read_verification_token(token):
 
 
 def approvers_for(req):
-    employee = req.user
-    if employee.manager_id:
-        manager = db.session.get(User, employee.manager_id)
-        if manager and manager.email_verified:
-            return [manager]
-    return User.query.filter(
-        User.organization_id == req.organization_id,
-        User.role == "org_admin",
-        User.id != employee.id,
-        User.email_verified.is_(True),
-    ).all()
-
+    from app.services.leave_service import approver_for
+    approver = approver_for(req.user)
+    if approver and approver.email_verified:
+        return [approver]
+    return []
 
 def notify_new_request(req):
     for approver in approvers_for(req):

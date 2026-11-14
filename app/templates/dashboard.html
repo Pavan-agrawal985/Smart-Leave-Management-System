@@ -5,12 +5,18 @@
 <div class="welcome">
   <div>
     <h1>Welcome, {{ current_user.name }}</h1>
-    <p class="muted">{{ org.name }} &middot; {{ org.org_type|capitalize }} &middot; {{ current_user.role|replace('_', ' ')|capitalize }}</p>
+    <p class="muted">{{ org.name }} &middot; {{ org.org_type }} &middot; {{ current_user.role|replace('_', ' ') }}</p>
   </div>
   <div class="links">
-    <a href="{{ url_for('leave.apply') }}">Apply for leave</a>
-    <a href="{{ url_for('leave.my') }}" class="ghost">My leaves</a>
-    <a href="{{ url_for('leave.team_calendar') }}" class="ghost">Calendar</a>
+    {% if current_user.role == 'org_admin' %}
+      <a href="{{ url_for('leave.approvals') }}">Approvals</a>
+      <a href="{{ url_for('admin.employees') }}" class="ghost">People</a>
+      <a href="{{ url_for('leave.team_calendar') }}" class="ghost">Calendar</a>
+    {% else %}
+      <a href="{{ url_for('leave.apply') }}">Apply for leave</a>
+      <a href="{{ url_for('leave.my') }}" class="ghost">My leaves</a>
+      <a href="{{ url_for('leave.team_calendar') }}" class="ghost">Calendar</a>
+    {% endif %}
   </div>
 </div>
 
@@ -18,17 +24,27 @@
 <div class="notice"><b>{{ pending_count }}</b> request(s) waiting for your approval. <a href="{{ url_for('leave.approvals') }}">Review now</a></div>
 {% endif %}
 
+{% if current_user.role == 'org_admin' %}
+<h2>Your organization</h2>
+<div class="tiles">
+  <div class="tile"><div class="tile-top"><span>Managers</span></div><div class="tile-num"><b>{{ stats.managers }}</b> active</div></div>
+  <div class="tile"><div class="tile-top"><span>Employees</span></div><div class="tile-num"><b>{{ stats.employees }}</b> active</div></div>
+  <div class="tile"><div class="tile-top"><span>Invited</span></div><div class="tile-num"><b>{{ stats.invited }}</b> waiting to join</div></div>
+  <div class="tile"><div class="tile-top"><span>Waiting for you</span></div><div class="tile-num"><b>{{ stats.waiting }}</b> manager request(s)</div></div>
+</div>
+<p class="muted" style="margin-top:16px">You approve leave for your managers. Each manager approves leave for the employees under them.</p>
+{% else %}
 <h2>My leave balance (this year)</h2>
 <div class="tiles">
   {% for b in balances %}
-  {% set pct = ((b.used * 100 / b.quota)|round|int) if b.quota else 0 %}
   <div class="tile">
-    <div class="tile-top"><span>{{ b.type.name }}</span><span>{{ b.used }} of {{ b.quota }} used</span></div>
-    <div class="tile-num"><b>{{ b.left }}</b> days left</div>
-    <progress class="bar" value="{{ [pct, 100]|min }}" max="100" aria-label="{{ b.type.name }} used"></progress>
+    <div class="tile-top"><span>{{ b['type'].name }}</span><span>{{ b['used'] }} of {{ b['quota'] }} used</span></div>
+    <div class="tile-num"><b>{{ b['left'] }}</b> days left</div>
+    <progress class="bar" value="{{ b['pct'] }}" max="100" aria-label="{{ b['type'].name }} used"></progress>
   </div>
   {% else %}
   <p class="muted">No leave types yet.</p>
   {% endfor %}
 </div>
+{% endif %}
 {% endblock %}

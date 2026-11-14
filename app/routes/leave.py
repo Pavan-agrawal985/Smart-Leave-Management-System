@@ -5,7 +5,7 @@ from flask_login import login_required, current_user
 from app.extensions import db
 from app.models import LeaveType, LeaveRequest, Organization
 from app.services.leave_service import (
-    working_days, used_days, has_overlap, can_approve, pending_for,
+    working_days, used_days, has_overlap, can_approve, pending_for, approver_for,
 )
 from app.services.email_service import notify_new_request, notify_decision
 from app.services.calendar_service import month_data
@@ -13,9 +13,23 @@ from app.services.calendar_service import month_data
 bp = Blueprint("leave", __name__, url_prefix="/leave")
 
 
+def _admins_take_no_leave():
+    if current_user.role == "org_admin":
+        flash("Administrators do not take leave here. You approve leave for your managers.")
+        return redirect(url_for("main.dashboard"))
+    return None
+
+
 @bp.route("/apply", methods=["GET", "POST"])
 @login_required
 def apply():
+    blocked = _admins_take_no_leave()
+    if blocked:
+        return blocked
+    if approver_for(current_user) is None:
+        flash("You do not have a manager yet, so you cannot apply for leave. Please ask your administrator.")
+        return redirect(url_for("main.dashboard"))
+
     types = (
         LeaveType.query.filter_by(organization_id=current_user.organization_id)
         .order_by(LeaveType.name)
@@ -77,6 +91,9 @@ def apply():
 @bp.route("/my")
 @login_required
 def my():
+    blocked = _admins_take_no_leave()
+    if blocked:
+        return blocked
     requests_ = (
         LeaveRequest.query.filter_by(user_id=current_user.id)
         .order_by(LeaveRequest.created_at.desc())

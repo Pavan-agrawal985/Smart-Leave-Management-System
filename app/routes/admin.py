@@ -4,8 +4,9 @@ from flask import Blueprint, render_template, request, redirect, url_for, flash,
 from flask_login import login_required, current_user
 from app.extensions import db
 from app.models import User, LeaveType, LeaveRequest, Holiday, Organization
-from app.services.validation import check_email, check_password
+from app.services.validation import check_email
 from app.services.email_service import send_invite_email, can_send_invite
+
 bp = Blueprint("admin", __name__, url_prefix="/admin")
 
 
@@ -19,6 +20,20 @@ def org_admin_required(f):
 
 
 # ---------------------------------------------------------------- employees
+
+def has_active_reports(user):
+    return User.query.filter_by(manager_id=user.id, is_active=True).first() is not None
+
+
+def find_manager(org_id, manager_id):
+    """An active manager of this organization, or None."""
+    if not str(manager_id).isdigit():
+        return None
+    return User.query.filter_by(
+        id=int(manager_id), organization_id=org_id, role="manager", is_active=True
+    ).first()
+
+
 @bp.route("/employees", methods=["GET", "POST"])
 @login_required
 @org_admin_required
@@ -29,18 +44,9 @@ def employees():
         name = " ".join(request.form.get("name", "").split())
         email = request.form.get("email", "").strip().lower()
         role = request.form.get("role", "employee")
-        manager_id = request.form.get("manager_id", "")
-
         if role not in ("employee", "manager"):
             role = "employee"
-
-        manager = None
-        if manager_id.isdigit():
-            manager = User.query.filter_by(
-                id=int(manager_id), organization_id=org_id, is_active=True
-            ).first()
-            if manager and manager.role not in ("org_admin", "manager"):
-                manager = None
+        manager = find_manager(org_id, request.form.get("manager_id", ""))
 
         email, email_error = check_email(email)
 
@@ -50,13 +56,16 @@ def employees():
             flash("Name is too long.")
         elif User.query.filter_by(email=email).first():
             flash("Email already registered.")
+        elif role == "employee" and manager is None:
+            flash("Choose a manager for this employee.")
         else:
+            boss_id = current_user.id if role == "manager" else manager.id   # managers report to the administrator
             user = User(
                 organization_id=org_id,
                 name=name or email.split("@")[0],
                 email=email,
                 role=role,
-                manager_id=manager.id if manager else None,
+                manager_id=boss_id,
                 email_verified=False,
                 invite_pending=True,
             )
@@ -71,7 +80,7 @@ def employees():
             return redirect(url_for("admin.employees"))
 
     users = User.query.filter_by(organization_id=org_id).order_by(User.name).all()
-    managers = [u for u in users if u.role in ("org_admin", "manager") and u.is_active]
+    managers = [u for u in users if u.role == "manager" and u.is_active]
     by_id = {u.id: u for u in users}
     return render_template("admin/employees.html", users=users, managers=managers, by_id=by_id)
 
@@ -94,24 +103,6 @@ def resend_invite(user_id):
         flash(f"Invitation sent again to {user.email}.", "ok")
     return redirect(url_for("admin.employees"))
 
-def would_create_loop(user_id, new_manager_id):
-    """True if making new_manager_id the boss of user_id would create a reporting loop."""
-    seen = set()
-    current = new_manager_id
-    while current is not None and current not in seen:
-        if current == user_id:
-            return True
-        seen.add(current)
-        boss = db.session.get(User, current)
-        current = boss.manager_id if boss else None
-    return False
-
-
-def move_reports_up(user):
-    """The people reporting to `user` now report to `user`'s own manager."""
-    for report in User.query.filter_by(manager_id=user.id).all():
-        report.manager_id = user.manager_id
-
 
 @bp.route("/employees/<int:user_id>/edit", methods=["POST"])
 @login_required
@@ -128,24 +119,24 @@ def edit_employee(user_id):
     if role not in ("employee", "manager"):
         role = user.role
 
-    manager = None
-    manager_id = request.form.get("manager_id", "")
-    if manager_id.isdigit():
-        manager = User.query.filter_by(
-            id=int(manager_id), organization_id=org_id, is_active=True
-        ).first()
-        if manager and manager.role not in ("org_admin", "manager"):
-            manager = None
+    manager = find_manager(org_id, request.form.get("manager_id", ""))
+    if manager and manager.id == user.id:
+        manager = None
 
-    if manager and would_create_loop(user.id, manager.id):
-        flash("That would make a reporting loop. Choose a different manager.")
+    if role == "manager":
+        new_boss_id = current_user.id                        # managers report to the administrator
+    elif manager is None:
+        flash("Choose a manager for this employee.")
+        return redirect(url_for("admin.employees"))
+    else:
+        new_boss_id = manager.id
+
+    if user.role == "manager" and role == "employee" and has_active_reports(user):
+        flash("This manager still has employees. Reassign them to another manager first.")
         return redirect(url_for("admin.employees"))
 
-    if user.role == "manager" and role == "employee":
-        move_reports_up(user)   # an employee cannot approve, so hand the team upwards
-
     user.role = role
-    user.manager_id = manager.id if manager else None
+    user.manager_id = new_boss_id
     db.session.commit()
     flash("Employee updated.", "ok")
     return redirect(url_for("admin.employees"))
@@ -164,10 +155,12 @@ def employee_status(user_id, action):
     if user.role == "org_admin":
         flash("Admin accounts cannot be deactivated here.")
     elif action == "deactivate":
-        move_reports_up(user)
-        user.is_active = False
-        db.session.commit()
-        flash(f"{user.name} was deactivated.", "ok")
+        if user.role == "manager" and has_active_reports(user):
+            flash("This manager still has employees. Reassign them to another manager first.")
+        else:
+            user.is_active = False
+            db.session.commit()
+            flash(f"{user.name} was deactivated.", "ok")
     else:
         user.is_active = True
         db.session.commit()

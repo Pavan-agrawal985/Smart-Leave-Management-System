@@ -1,8 +1,7 @@
 import pytest
 
 PUBLIC = ["/", "/login", "/register", "/forgot-password"]
-APP = ["/dashboard", "/leave/apply", "/leave/my", "/leave/calendar", "/leave/approvals",
-       "/reports/", "/admin/employees", "/admin/leave-types", "/admin/holidays"]
+
 
 
 def check_shell(html):
@@ -22,12 +21,23 @@ def test_public_pages_have_the_responsive_shell(client, url):
     check_shell(r.data)
 
 
-@pytest.mark.parametrize("url", APP)
-def test_app_pages_have_the_responsive_shell(login_as, world, url):
+ADMIN_PAGES = ["/dashboard", "/leave/calendar", "/leave/approvals", "/reports/",
+               "/admin/employees", "/admin/leave-types", "/admin/holidays"]
+EMPLOYEE_PAGES = ["/dashboard", "/leave/apply", "/leave/my", "/leave/calendar"]
+
+
+@pytest.mark.parametrize("url", ADMIN_PAGES)
+def test_admin_pages_have_the_responsive_shell(login_as, world, url):
     r = login_as("admin@alpha.io").get(url)
     assert r.status_code == 200
     check_shell(r.data)
 
+
+@pytest.mark.parametrize("url", EMPLOYEE_PAGES)
+def test_employee_pages_have_the_responsive_shell(login_as, world, url):
+    r = login_as("emp@alpha.io").get(url)
+    assert r.status_code == 200
+    check_shell(r.data)
 
 def test_owner_pages_have_the_shell(owner_client, client, world):
     for page in (owner_client.get("/owner/organizations"), client.get("/owner/login")):

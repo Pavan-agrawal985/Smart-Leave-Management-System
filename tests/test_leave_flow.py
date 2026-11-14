@@ -27,16 +27,6 @@ def test_apply_creates_request_and_emails_manager_without_private_details(login_
     assert "Zelda" not in mails[0]["body"] and "Family function" not in mails[0]["body"]
 
 
-def test_employee_without_manager_notifies_admin(login_as, factory, world, outbox):
-    factory.user(world.a, "solo@alpha.io", "Solo Person")
-    apply(login_as("solo@alpha.io"), factory.leave_type(world.a), "2026-11-09", "2026-11-09")
-    assert [m["to"] for m in outbox] == ["admin@alpha.io"]
-
-
-def test_unverified_manager_is_not_emailed(login_as, factory, world, outbox):
-    factory.update(User, world.a_mgr, email_verified=False)
-    apply(login_as("emp@alpha.io"), factory.leave_type(world.a), "2026-11-09", "2026-11-09")
-    assert [m["to"] for m in outbox] == ["admin@alpha.io"]
 
 
 def test_weekends_and_holidays_do_not_cost_leave(login_as, factory, world):
@@ -107,10 +97,6 @@ def test_rejecting_gives_the_days_back(login_as, factory, world):
     assert b"<b>8</b>" in login_as("emp@alpha.io").get("/dashboard").data
 
 
-def test_admin_can_also_decide(login_as, factory, world):
-    rid = pending(factory, world)
-    assert login_as("admin@alpha.io").post(f"/leave/{rid}/approve").status_code == 302
-    assert factory.get(LeaveRequest, id=rid).status == "approved"
 
 
 def test_nobody_else_can_decide(login_as, factory, world):

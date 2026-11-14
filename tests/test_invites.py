@@ -10,7 +10,7 @@ def post(client, url, **data):
 
 
 def invite(admin, **over):
-    data = {"name": "New Hire", "email": "hire@alpha.io", "role": "employee"}
+    data = {"name": "New Hire", "email": "hire@alpha.io", "role": "manager"}
     data.update(over)
     return post(admin, "/admin/employees", **data)
 
@@ -23,15 +23,46 @@ def token_of(mail):
     return re.search(r"/invite/(\S+)", mail["body"]).group(1)
 
 
-def test_admin_invites_an_employee(login_as, factory, world, outbox):
-    r = invite(login_as("admin@alpha.io"), manager_id=str(world.a_mgr))
+def test_admin_invites_a_manager_who_reports_to_the_admin(login_as, factory, world, outbox):
+    r = invite(login_as("admin@alpha.io"))
     assert b"Invitation sent to hire@alpha.io" in r.data
     user = factory.get(User, email="hire@alpha.io")
-    assert (user.name, user.role, user.manager_id) == ("New Hire", "employee", world.a_mgr)
+    assert (user.name, user.role, user.manager_id) == ("New Hire", "manager", world.a_admin)
     assert user.invite_pending is True and user.email_verified is False
     mail = last_invite(outbox, "hire@alpha.io")
-    assert "Alpha Corp" in mail["subject"]
-    assert "New Hire" not in mail["body"]
+    assert "Alpha Corp" in mail["subject"] and "New Hire" not in mail["body"]
+
+
+def test_admin_invites_an_employee_under_a_manager(login_as, factory, world):
+    invite(login_as("admin@alpha.io"), role="employee", manager_id=str(world.a_mgr))
+    user = factory.get(User, email="hire@alpha.io")
+    assert (user.role, user.manager_id) == ("employee", world.a_mgr)
+
+
+@pytest.mark.parametrize("manager", ["", "abc", "ADMIN", "OTHER_ORG", "EMPLOYEE"])
+def test_employee_invitation_needs_a_real_manager(login_as, factory, world, outbox, manager):
+    value = {"ADMIN": str(world.a_admin), "OTHER_ORG": str(world.b_admin),
+             "EMPLOYEE": str(world.a_emp)}.get(manager, manager)
+    before = factory.count(User)
+    r = invite(login_as("admin@alpha.io"), role="employee", manager_id=value)
+    assert b"Choose a manager for this employee." in r.data
+    assert factory.count(User) == before and outbox == []
+
+
+def test_inactive_manager_cannot_get_new_employees(login_as, factory, world):
+    factory.update(User, world.a_mgr, is_active=False)
+    r = invite(login_as("admin@alpha.io"), role="employee", manager_id=str(world.a_mgr))
+    assert b"Choose a manager for this employee." in r.data
+
+
+def test_unknown_roles_become_employees(login_as, factory, world):
+    admin = login_as("admin@alpha.io")
+    invite(admin, email="x1@alpha.io", role="org_admin", manager_id=str(world.a_mgr))
+    invite(admin, email="x2@alpha.io", role="superuser", manager_id=str(world.a_mgr))
+    assert factory.get(User, email="x1@alpha.io").role == "employee"     # no second administrators
+    assert factory.get(User, email="x2@alpha.io").role == "employee"
+    r = invite(admin, email="x3@alpha.io", role="org_admin")             # and an employee needs a manager
+    assert b"Choose a manager" in r.data and factory.get(User, email="x3@alpha.io") is None
 
 
 def test_employees_page_shows_the_invited_status(login_as, world):
@@ -48,7 +79,8 @@ def test_invited_person_cannot_log_in_yet(client, login_as, world):
 
 
 def test_employee_joins_with_their_own_details(client, login_as, factory, world, outbox):
-    invite(login_as("admin@alpha.io"), name="", email="tara@alpha.io", manager_id=str(world.a_mgr))
+    invite(login_as("admin@alpha.io"), name="", email="tara@alpha.io",
+           role="employee", manager_id=str(world.a_mgr))
     token = token_of(last_invite(outbox, "tara@alpha.io"))
 
     page = client.get(f"/invite/{token}")
@@ -123,20 +155,9 @@ def test_invitation_rules(login_as, factory, world, outbox, over, message):
     assert outbox == []
 
 
-def test_roles_and_managers_are_checked(login_as, factory, world):
-    admin = login_as("admin@alpha.io")
-    invite(admin, email="x1@alpha.io", role="org_admin")
-    invite(admin, email="x2@alpha.io", role="manager")
-    invite(admin, email="x3@alpha.io", manager_id=str(world.b_admin))     # a manager from another organization
-    invite(admin, email="x4@alpha.io", manager_id=str(world.a_emp))       # an employee cannot be a manager
-    assert factory.get(User, email="x1@alpha.io").role == "employee"
-    assert factory.get(User, email="x2@alpha.io").role == "manager"
-    assert factory.get(User, email="x3@alpha.io").manager_id is None
-    assert factory.get(User, email="x4@alpha.io").manager_id is None
-
-
 def test_only_the_org_admin_can_invite_or_resend(login_as, factory, world):
-    assert login_as("emp@alpha.io").post("/admin/employees", data={"email": "z@alpha.io"}).status_code == 403
+    for email in ("emp@alpha.io", "mgr@alpha.io"):
+        assert login_as(email).post("/admin/employees", data={"email": "z@alpha.io"}).status_code == 403
     invite(login_as("admin@alpha.io"))
     uid = factory.get(User, email="hire@alpha.io").id
     assert login_as("admin@beta.io").post(f"/admin/employees/{uid}/resend-invite").status_code == 404

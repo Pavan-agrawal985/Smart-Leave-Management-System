@@ -67,6 +67,24 @@ def has_overlap(user_id, from_date, to_date):
     )
 
 
+def approver_for(user):
+    """The one person who approves this person's leave. Administrators take no leave."""
+    if user.role == "employee":
+        boss = db.session.get(User, user.manager_id) if user.manager_id else None
+        if boss and boss.is_active and boss.role == "manager":
+            return boss
+        return None
+    if user.role == "manager":
+        return (
+            User.query.filter_by(
+                organization_id=user.organization_id, role="org_admin", is_active=True
+            )
+            .order_by(User.id)
+            .first()
+        )
+    return None
+
+
 def can_approve(approver, req):
     if req.organization_id != approver.organization_id:
         return False
@@ -74,17 +92,24 @@ def can_approve(approver, req):
         return False
     if req.user_id == approver.id:
         return False
+    owner = req.user
     if approver.role == "org_admin":
-        return True
-    return req.user.manager_id == approver.id
+        return owner.role == "manager"                      # the administrator approves managers
+    if approver.role == "manager":
+        return owner.role == "employee" and owner.manager_id == approver.id
+    return False
 
 
 def pending_for(approver):
-    q = LeaveRequest.query.filter(
+    q = LeaveRequest.query.join(User, LeaveRequest.user_id == User.id).filter(
         LeaveRequest.organization_id == approver.organization_id,
         LeaveRequest.status == "pending",
         LeaveRequest.user_id != approver.id,
     )
-    if approver.role != "org_admin":
-        q = q.join(User, LeaveRequest.user_id == User.id).filter(User.manager_id == approver.id)
+    if approver.role == "org_admin":
+        q = q.filter(User.role == "manager")
+    elif approver.role == "manager":
+        q = q.filter(User.role == "employee", User.manager_id == approver.id)
+    else:
+        return []
     return q.order_by(LeaveRequest.created_at.desc()).all()

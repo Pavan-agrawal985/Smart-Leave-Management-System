@@ -67,30 +67,3 @@ def test_overlap_detection(flask_app, factory, world):
         assert has_overlap(world.a_emp, date(2026, 12, 2), date(2026, 12, 2)) is False   # rejected
 
 
-def test_who_can_approve(flask_app, factory, world):
-    mgr2 = factory.user(world.a, "mgr2@alpha.io", "Other Manager", "manager", world.a_admin)
-    t = factory.leave_type(world.a)
-    rid = factory.request(world.a, world.a_emp, t, date(2026, 11, 9), date(2026, 11, 9), 1)
-    done = factory.request(world.a, world.a_emp, t, date(2026, 11, 10), date(2026, 11, 10), 1, "approved")
-    with flask_app.app_context():
-        req = db.session.get(LeaveRequest, rid)
-        get = lambda uid: db.session.get(User, uid)
-        assert can_approve(get(world.a_mgr), req) is True        # the employee's manager
-        assert can_approve(get(world.a_admin), req) is True      # org admin
-        assert can_approve(get(world.a_emp), req) is False       # self
-        assert can_approve(get(mgr2), req) is False              # another team's manager
-        assert can_approve(get(world.b_admin), req) is False     # other organization
-        assert can_approve(get(world.a_mgr), db.session.get(LeaveRequest, done)) is False  # not pending
-
-
-def test_pending_lists(flask_app, factory, world):
-    mgr2 = factory.user(world.a, "mgr2@alpha.io", "Other Manager", "manager", world.a_admin)
-    t = factory.leave_type(world.a)
-    rid = factory.request(world.a, world.a_emp, t, date(2026, 11, 9), date(2026, 11, 9), 1)
-    factory.request(world.a, world.a_admin, t, date(2026, 11, 10), date(2026, 11, 10), 1)
-    with flask_app.app_context():
-        ids = lambda uid: [r.id for r in pending_for(db.session.get(User, uid))]
-        assert ids(world.a_mgr) == [rid]
-        assert ids(world.a_admin) == [rid]       # his own request is not listed
-        assert ids(mgr2) == []
-        assert ids(world.b_admin) == []

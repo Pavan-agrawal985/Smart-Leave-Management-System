@@ -1,10 +1,10 @@
 {% extends "base.html" %}
-{% block title %}Employees - LeaveOk{% endblock %}
+{% block title %}People - LeaveOk{% endblock %}
 {% block wrap %}wide{% endblock %}
 {% block content %}
 <div class="card">
   <h2>Invite someone</h2>
-  <p class="muted">They get an email with a link. They enter their own details and choose their own password.</p>
+  <p class="muted">Managers report to you. Employees report to a manager. Each person gets an email, enters their own details and chooses their own password.</p>
   <form method="POST">
     <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
 
@@ -15,18 +15,21 @@
     <input type="email" name="email" required>
 
     <label>Role</label>
-    <select name="role">
-      <option value="employee">Employee</option>
-      <option value="manager">Manager</option>
+    <select name="role" id="role">
+      <option value="employee">Employee (reports to a manager)</option>
+      <option value="manager">Manager (reports to you)</option>
     </select>
 
-    <label>Reports to</label>
-    <select name="manager_id">
-      <option value="">- none -</option>
-      {% for m in managers %}
-        <option value="{{ m.id }}">{{ m.name }} ({{ m.role }})</option>
-      {% endfor %}
-    </select>
+    <div id="mgr-wrap">
+      <label>Manager</label>
+      <select name="manager_id">
+        <option value="">- choose a manager -</option>
+        {% for m in managers %}
+          <option value="{{ m.id }}">{{ m.name }}</option>
+        {% endfor %}
+      </select>
+      {% if not managers %}<p class="muted">There are no managers yet. Invite a manager first, then add employees under them.</p>{% endif %}
+    </div>
 
     <button type="submit">Send invitation</button>
   </form>
@@ -42,7 +45,7 @@
       <td>{{ u.name }}</td>
       <td>{{ u.email }}</td>
       {% if u.role == 'org_admin' %}
-        <td>Organization admin</td>
+        <td>Administrator{% if u.id == current_user.id %} (you){% endif %}</td>
         <td><span class="badge approved">active</span></td>
         <td>{{ u.created_at.strftime('%d %b %Y') if u.created_at else '-' }}</td>
         <td></td>
@@ -55,7 +58,7 @@
               <option value="manager" {% if u.role == 'manager' %}selected{% endif %}>Manager</option>
             </select>
             <select name="manager_id">
-              <option value="">- no manager -</option>
+              <option value="">{{ 'reports to you' if u.role == 'manager' else '- choose a manager -' }}</option>
               {% for m in managers %}
                 {% if m.id != u.id %}
                 <option value="{{ m.id }}" {% if u.manager_id == m.id %}selected{% endif %}>{{ m.name }}</option>
@@ -97,4 +100,13 @@
   </table>
   </div>
 </div>
+
+<script>
+  (function () {
+    var role = document.getElementById('role'), wrap = document.getElementById('mgr-wrap');
+    function show() { wrap.style.display = role.value === 'manager' ? 'none' : 'block'; }
+    role.addEventListener('change', show);
+    show();
+  })();
+</script>
 {% endblock %}

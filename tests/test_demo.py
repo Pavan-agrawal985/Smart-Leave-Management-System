@@ -9,11 +9,11 @@ def seed(app, password="Demo@2026ab"):
     return run(app, "seed-demo", "--email", "me@gmail.com", "--password", password)
 
 
-def test_seed_builds_a_lively_organization(flask_app, factory):
+def test_seed_builds_a_lively_corporate_demo(flask_app, factory):
     result = seed(flask_app)
     assert result.exit_code == 0, result.output
-    org = factory.get(Organization, name="Demo University")
-    assert org.status == "active"
+    org = factory.get(Organization, name="Demo Corporation")
+    assert (org.status, org.org_type) == ("active", "corporate")
     assert factory.count(User, organization_id=org.id) == 8
     assert factory.count(LeaveRequest, organization_id=org.id) >= 8
     admin = factory.get(User, email="me+demo-asha@gmail.com")
@@ -21,12 +21,15 @@ def test_seed_builds_a_lively_organization(flask_app, factory):
     assert admin.check_password("Demo@2026ab")
 
 
-def test_demo_hierarchy(flask_app, factory):
+def test_demo_follows_the_hierarchy(flask_app, factory):
     seed(flask_app)
+    asha = factory.get(User, email="me+demo-asha@gmail.com")
     rahul = factory.get(User, email="me+demo-rahul@gmail.com")
     aman = factory.get(User, email="me+demo-aman@gmail.com")
-    assert aman.manager_id == rahul.id
-    assert rahul.manager_id == factory.get(User, email="me+demo-asha@gmail.com").id
+    assert asha.manager_id is None
+    assert (rahul.role, rahul.manager_id) == ("manager", asha.id)
+    assert (aman.role, aman.manager_id) == ("employee", rahul.id)
+    assert factory.count(LeaveRequest, user_id=asha.id) == 0        # the administrator takes no leave
 
 
 def test_weak_password_and_bad_email_refused(flask_app, factory):

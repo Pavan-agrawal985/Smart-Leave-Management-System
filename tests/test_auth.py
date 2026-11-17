@@ -8,7 +8,7 @@ STRONG = "Strong@2026x"
 
 
 def signup(client, **over):
-    data = {"org_name": "Green Valley School", "org_type": "school",
+    data = {"org_name": "Green Valley School", "org_type": "bank",
             "name": "Priya Principal", "email": "principal@gv.in", "password": STRONG}
     data.update(over)
     return client.post("/register", data=data)

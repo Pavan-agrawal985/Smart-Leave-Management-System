@@ -59,7 +59,7 @@ def test_css_has_mobile_rules_and_dark_mode(client):
 
 def test_landing_has_its_sections(client):
     html = client.get("/").data
-    for text in (b"Create your organization", b"How it works", b"Schools", b"Login", b"Sample view"):
+    for text in (b"Create your organization", b"How it works", b"banks", b"Login", b"Sample view"):
         assert text in html
 
 

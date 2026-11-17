@@ -3,7 +3,7 @@ from flask import Blueprint, render_template, request, redirect, url_for, flash
 from flask_login import login_user, logout_user, login_required, current_user
 from app.extensions import db
 from app.models import Organization, User
-from app.services.org_templates import seed_leave_types
+from app.services.org_templates import seed_leave_types, TEMPLATES
 from app.services.validation import check_email, check_password
 from app.services.email_service import (
     send_verification_email, read_verification_token, can_send_verification,
@@ -25,6 +25,8 @@ def register():
     if request.method == "POST":
         org_name = " ".join(request.form.get("org_name", "").split())
         org_type = request.form.get("org_type", "custom")
+        if org_type not in TEMPLATES:
+            org_type = "custom"
         name = " ".join(request.form.get("name", "").split())
         email = request.form.get("email", "").strip().lower()
         password = request.form.get("password", "")

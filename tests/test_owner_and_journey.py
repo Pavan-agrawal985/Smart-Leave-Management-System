@@ -15,7 +15,7 @@ def join(client, outbox, email, name, password):
 def test_full_journey(client, login_as, factory, outbox, token_in):
     # 1. Anyone creates an organization. No approval step.
     r = client.post("/register", data={
-        "org_name": "Green Valley School", "org_type": "school", "name": "Priya Principal",
+        "org_name": "Green Valley School", "org_type": "bank", "name": "Priya Principal",
         "email": "principal@gv.in", "password": STRONG})
     assert r.status_code == 302
     school = factory.get(Organization, name="Green Valley School")

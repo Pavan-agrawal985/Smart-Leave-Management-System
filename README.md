@@ -2,7 +2,7 @@
 
 ![Tests](https://github.com/Pavan-agrawal985/Smart-Leave-Management-System/actions/workflows/tests.yml/badge.svg)
 
-**A multi-organization leave management system.** Schools, colleges, banks and offices each get a private workspace with their own people, leave types, holidays and approvals. One application, many institutions, and no organization can ever see another's data.
+**A multi-organization leave management system for banks, corporate offices and other organizations.** Each organization gets a private workspace with its own people, leave types, holidays and approvals. One application, many organizations, and no organization can ever see another's data.
 
 **Live app:** https://YOUR-APP.vercel.app
 **Demo video:** https://YOUR-VIDEO-LINK
@@ -39,7 +39,7 @@
 
 ## Overview
 
-Every institution manages leave differently. A school has duty leave and Sunday-only weeks, a bank has privilege leave with carry-forward, an office has annual and sick leave with a two-day weekend. LeaveOk handles all of them with **configuration instead of custom code**: each organization chooses a starting template (School, College, Corporate, Bank, or Other) and then edits its own leave types, quotas, weekly offs and holidays.
+Every organization manages leave differently. A bank has privilege leave with carry-forward and a Sunday-only week. A corporate office has annual and sick leave with a two-day weekend. LeaveOk handles both, and any other kind of organization, with **configuration instead of custom code**: each organization chooses a starting template (Bank, Corporate office, or Other) and then edits its own leave types, quotas, weekly offs and holidays.
 
 Every organization follows one clear chain of responsibility: **one administrator, who controls the managers, who control their own employees.**
 
@@ -51,7 +51,7 @@ Every organization follows one clear chain of responsibility: **one administrato
 
 ### For organizations
 - **Self-serve sign-up** with real-email checking (the email domain must be able to receive mail) and email verification before the first login. There is no approval step
-- **Starter templates** for School, College, Corporate, Bank and Other, with sensible leave types and weekly offs
+- **Starter templates** for Bank, Corporate office and Other, with sensible leave types and weekly offs
 - **Invitation-based onboarding:** the administrator invites a manager, or an employee under a chosen manager. The person receives a one-time link, enters their own details and chooses their own password. The administrator never sees or sets passwords
 - **People management:** change roles and managers, deactivate and reactivate people, resend invitations. A manager with employees cannot be deactivated or turned into an employee until the team is reassigned
 - **Administrator overview:** counts of managers, employees, people still invited, and requests waiting for approval
@@ -266,7 +266,7 @@ Smart-Leave-Management-System/
 │   │   ├── report_service.py    # report rows, summary, safe CSV
 │   │   ├── email_service.py     # sending mail and signed links
 │   │   ├── owner_stats.py       # platform totals and organization rows
-│   │   ├── org_templates.py     # School, College, Corporate, Bank starters
+│   │   ├── org_templates.py     # Corporate, Bank and Other starters
 │   │   └── validation.py        # email and password rules
 │   │
 │   ├── templates/               # Jinja pages
@@ -290,6 +290,7 @@ Smart-Leave-Management-System/
     ├── test_validation.py       # password and email rules
     ├── test_leave_service.py    # working days, balances, overlaps
     ├── test_hierarchy.py        # who approves whom, and who controls whom
+    ├── test_org_types.py        # Bank, Corporate and Other starters
     ├── test_auth.py             # sign-up, verification, login, lockout
     ├── test_invites.py          # invitation-based onboarding
     ├── test_accounts.py         # forgot password
@@ -338,7 +339,7 @@ Nobody can approve their own request. The administrator account cannot be edited
 ## How the main flows work
 
 **Creating an organization**
-1. Someone signs up with an organization name, a type, their name, a real email and a strong password. They become the organization's administrator.
+1. Someone signs up with an organization name, a type (Bank, Corporate office or Other), their name, a real email and a strong password. They become the organization's administrator.
 2. They click the verification link sent to their inbox, then log in. There is no approval step.
 3. Default leave types and weekly offs for the chosen type are created automatically.
 
@@ -361,13 +362,11 @@ Nobody can approve their own request. The administrator account cannot be edited
 
 | Type | Leave types (days per year) | Weekly off |
 |---|---|---|
-| School | Casual 12, Medical 10, Duty 10 | Sunday |
-| College | Casual 12, Medical 10, Duty 15, Earned 15 | Sunday |
-| Corporate | Annual 24, Sick 12, Casual 8 | Saturday and Sunday |
+| Corporate office | Annual 24, Sick 12, Casual 8 | Saturday and Sunday |
 | Bank | Privilege 30, Sick 12, Casual 12 | Sunday |
 | Other | Casual 12, Sick 10 | Saturday and Sunday |
 
-Administrators can change all of this afterwards.
+Administrators can change all of this afterwards, including adding Saturday as a weekly off for a bank.
 
 ---
 
@@ -487,7 +486,7 @@ Open http://127.0.0.1:5000. The owner logs in at `/owner/login`. Organizations s
 | `flask db upgrade` | Applies database changes |
 | `flask db migrate -m "message"` | Creates a new migration after a model change |
 | `flask owner-hash` | Creates the value for `OWNER_PASSWORD_HASH` |
-| `flask seed-demo --email you@gmail.com` | Creates "Demo University" with an administrator, two managers, five employees, holidays and leave requests, using `you+demo-...@gmail.com` addresses |
+| `flask seed-demo --email you@gmail.com` | Creates "Demo Corporation" with an administrator, two managers, five employees, holidays and leave requests, using `you+demo-...@gmail.com` addresses |
 | `flask delete-demo` | Removes the demo organization completely |
 
 ---
@@ -505,6 +504,7 @@ python -m pytest -q
 | Validation | Password boundaries and email rules |
 | Leave rules | Working days with weekends and holidays, balances, overlaps |
 | Hierarchy | Who approves whom, who controls whom, manager and employee rules, administrators taking no leave |
+| Organization types | The Bank, Corporate and Other starters, and that unknown types fall back to Other |
 | Accounts | Sign-up, verification, login lockout, forgot password, invitations |
 | Reports | Filters, team scoping, safe CSV |
 | Owner | Separate login, expiry, platform overview, suspend and reactivate |
@@ -556,6 +556,7 @@ The app runs on **free tiers**: Vercel for hosting and Neon for the database.
 
 - Approval is single-step: an employee's manager, or the administrator for a manager's leave
 - There is exactly one administrator per organization, and no backup approver when a manager or the administrator is away
+- Weekly offs are the same every week, so patterns such as alternate Saturdays off (common in banks) are not supported yet. Administrators can make every Saturday a weekly off instead
 - The *carry forward* setting is stored, but unused leave is not yet carried into the next year automatically
 - The Departments table exists, but there is no departments screen yet
 - Email goes through one shared Gmail sender, which has a daily sending limit. This is fine for pilots, not for large customer numbers
@@ -568,8 +569,10 @@ The app runs on **free tiers**: Vercel for hosting and Neon for the database.
 
 - [ ] Custom domain and a transactional email service (better delivery and no shared mailbox)
 - [ ] A backup approver for when a manager or the administrator is on leave
+- [ ] Alternate-Saturday weekly offs
 - [ ] Multi-step approval chains per leave type
 - [ ] Yearly carry-forward of unused leave
+- [ ] More starter templates (for example retail, hospital and NGO)
 - [ ] Departments and department-level reports
 - [ ] CSV import for adding many people at once
 - [ ] Cancel or withdraw a leave request

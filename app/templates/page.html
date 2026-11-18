@@ -1,0 +1,27 @@
+{% extends "base.html" %}
+{% block title %}{{ page.title }}{% endblock %}
+{% block description %}{{ page.description }}{% endblock %}
+{% block og_title %}{{ page.title }}{% endblock %}
+{% block og_description %}{{ page.description }}{% endblock %}
+{% block wrap %}wide{% endblock %}
+{% block content %}
+<article class="card article">
+  <h1>{{ page.h1 }}</h1>
+  <p class="lead-dark">{{ page.intro }}</p>
+  {% for s in page.sections %}
+    <h2>{{ s.h }}</h2>
+    {% if s.bullets %}<ul>{% for b in s.bullets %}<li>{{ b }}</li>{% endfor %}</ul>{% endif %}
+    {% if s.p %}<p>{{ s.p }}</p>{% endif %}
+  {% endfor %}
+  <p><a class="btn-link" href="{{ url_for('auth.register') }}">Create your organization</a></p>
+</article>
+
+<nav class="card related" aria-label="More about LeaveOk" style="margin-top:20px">
+  <h2>More about LeaveOk</h2>
+  <ul>
+    {% for slug, p in pages.items() if slug != current %}
+      <li><a href="{{ url_for('pages.show', slug=slug) }}">{{ p.title }}</a></li>
+    {% endfor %}
+  </ul>
+</nav>
+{% endblock %}

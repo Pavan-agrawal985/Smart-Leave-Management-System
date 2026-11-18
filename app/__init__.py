@@ -1,8 +1,15 @@
-from flask import Flask
+import os
+from flask import Flask, request
 from flask_compress import Compress
 from werkzeug.middleware.proxy_fix import ProxyFix
 from config import Config
 from app.extensions import db, migrate, csrf, login_manager
+
+# Pages that must never appear in search results
+PRIVATE_ROOTS = {
+    "/admin", "/leave", "/reports", "/dashboard", "/owner", "/verify", "/invite",
+    "/reset-password", "/forgot-password", "/login", "/logout", "/health",
+}
 
 
 def create_app(config_class=Config):
@@ -18,17 +25,30 @@ def create_app(config_class=Config):
     Compress(app)
 
     from app import models  # noqa: F401
-    from app.routes import auth, main, leave, admin, owner, reports
+    from app.routes import auth, main, leave, admin, owner, reports, pages
     app.register_blueprint(auth.bp)
     app.register_blueprint(main.bp)
     app.register_blueprint(leave.bp)
     app.register_blueprint(admin.bp)
     app.register_blueprint(owner.bp)
     app.register_blueprint(reports.bp)
+    app.register_blueprint(pages.bp)
 
     @app.context_processor
-    def inject_owner():
-        return {"owner_session": owner.owner_logged_in()}
+    def inject_globals():
+        return {
+            "owner_session": owner.owner_logged_in(),
+            "google_verification": os.environ.get("GOOGLE_SITE_VERIFICATION", "").strip(),
+        }
+
+    @app.after_request
+    def seo_headers(response):
+        first = "/" + request.path.strip("/").split("/")[0]     # matches whole path parts only
+        if first in PRIVATE_ROOTS:
+            response.headers["X-Robots-Tag"] = "noindex, nofollow"
+        elif first == "/static":
+            response.headers["Cache-Control"] = "public, max-age=604800"
+        return response
 
     @app.route("/health")
     def health():

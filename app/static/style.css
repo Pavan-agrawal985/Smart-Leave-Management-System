@@ -1151,3 +1151,49 @@ progress.bar::-moz-progress-bar {
     background: var(--primary);
     border-radius: 999px;
 }
+
+.article h2 {
+    margin-top: 28px;
+}
+
+.article ul,
+.related ul {
+    padding-left: 20px;
+}
+
+.article li,
+.related li {
+    margin: 6px 0;
+}
+
+.lead-dark {
+    font-size: 18px;
+    color: var(--muted);
+}
+
+a.btn-link {
+    display: inline-block;
+    padding: 12px 20px;
+    background: var(--primary);
+    color: #fff;
+    border-radius: 10px;
+    text-decoration: none;
+    font-weight: 600;
+}
+
+.foot-links {
+    display: flex;
+    gap: 18px;
+    justify-content: center;
+    flex-wrap: wrap;
+    margin-bottom: 10px;
+}
+
+.foot-links a {
+    color: var(--muted);
+    text-decoration: none;
+}
+
+.foot-links a:hover {
+    text-decoration: underline;
+}

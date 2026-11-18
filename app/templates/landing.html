@@ -1,9 +1,19 @@
 {% extends "base.html" %}
-{% block title %}LeaveOk - Leave management for banks, corporate offices and other organizations{% endblock %}
+{% block title %}LeaveOk - Leave management for banks and corporate offices{% endblock %}
+{% block description %}LeaveOk is simple leave management for banks, corporate offices and other organizations. Set up leave types, holidays and approvals in minutes.{% endblock %}
 {% block head %}
-<meta name="description" content="LeaveOk is a simple leave management system for banks, corporate offices and other organizations. Set up in minutes with your own leave types, holidays and approvals.">
-<meta property="og:title" content="LeaveOk - Leave management that fits your organization">
-<meta property="og:description" content="Leave types, holidays, approvals and reports, set up in minutes for banks, corporate offices and other organizations.">
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "SoftwareApplication",
+  "name": "LeaveOk",
+  "applicationCategory": "BusinessApplication",
+  "operatingSystem": "Web",
+  "description": "Leave management for banks, corporate offices and other organizations: leave types, holidays, approvals, a team calendar and reports.",
+  "url": "{{ request.url_root }}",
+  "image": "{{ url_for('static', filename='og-image.png', _external=True) }}"
+}
+</script>
 {% endblock %}
 {% block wrap %}landing{% endblock %}
 {% block content %}

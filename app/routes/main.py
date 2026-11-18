@@ -3,7 +3,7 @@ from flask_login import login_required, current_user
 from app.extensions import db
 from app.models import Organization, User
 from app.services.leave_service import get_balances, pending_for
-
+from app.routes.pages import PAGES
 bp = Blueprint("main", __name__)
 
 
@@ -22,6 +22,7 @@ def robots():
         "Disallow: /admin/\n"
         "Disallow: /owner/\n"
         "Disallow: /leave/\n"
+        "Disallow: /reports/\n"
         "Disallow: /dashboard\n"
         f"Sitemap: {url_for('main.sitemap', _external=True)}\n"
     )
@@ -30,11 +31,8 @@ def robots():
 
 @bp.route("/sitemap.xml")
 def sitemap():
-    pages = [
-        url_for("main.index", _external=True),
-        url_for("auth.login", _external=True),
-        url_for("auth.register", _external=True),
-    ]
+    pages = [url_for("main.index", _external=True), url_for("auth.register", _external=True)]
+    pages += [url_for("pages.show", slug=slug, _external=True) for slug in PAGES]
     urls = "".join(f"<url><loc>{p}</loc></url>" for p in pages)
     xml = (
         '<?xml version="1.0" encoding="UTF-8"?>'
@@ -42,7 +40,6 @@ def sitemap():
         f"{urls}</urlset>"
     )
     return Response(xml, mimetype="application/xml")
-
 
 @bp.route("/dashboard")
 @login_required

@@ -4,11 +4,23 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="theme-color" content="#0F2A4A">
+  <meta name="description" content="{% block description %}LeaveOk is a simple leave management system for banks, corporate offices and other organizations.{% endblock %}">
+  <link rel="canonical" href="{{ request.base_url }}">
+  <meta property="og:type" content="website">
+  <meta property="og:site_name" content="LeaveOk">
+  <meta property="og:url" content="{{ request.base_url }}">
+  <meta property="og:title" content="{% block og_title %}LeaveOk - Leave management that fits your organization{% endblock %}">
+  <meta property="og:description" content="{% block og_description %}Leave types, holidays, approvals and reports, set up in minutes for banks, corporate offices and other organizations.{% endblock %}">
+  <meta property="og:image" content="{{ url_for('static', filename='og-image.png', _external=True) }}">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+  <meta name="twitter:card" content="summary_large_image">
+  {% if google_verification %}<meta name="google-site-verification" content="{{ google_verification }}">{% endif %}
   <title>{% block title %}LeaveOk{% endblock %}</title>
   <link rel="icon" type="image/svg+xml" href="{{ url_for('static', filename='favicon.svg') }}">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap">
   <script>
     try {
       var t = localStorage.getItem('theme');
@@ -16,7 +28,7 @@
       if (t) document.documentElement.setAttribute('data-theme', t);
     } catch (e) {}
   </script>
-  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}?v=3">
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}?v=4">
   {% block head %}{% endblock %}
 </head>
 <body>
@@ -91,8 +103,15 @@
     </div>
   </main>
 
-  <footer class="foot">LeaveOk &middot; Leave management for  bank, corporate offices and other organizations</footer>
-
+  <footer class="foot">
+    <nav class="foot-links" aria-label="Footer">
+      <a href="{{ url_for('pages.show', slug='features') }}">Features</a>
+      <a href="{{ url_for('pages.show', slug='leave-management-for-banks') }}">For banks</a>
+      <a href="{{ url_for('pages.show', slug='leave-management-for-corporate-offices') }}">For corporate offices</a>
+      <a href="{{ url_for('pages.show', slug='faq') }}">FAQ</a>
+    </nav>
+    <div>LeaveOk &middot; Leave management for banks, corporate offices and other organizations</div>
+  </footer>
   <script>
     (function () {
       var root = document.documentElement;

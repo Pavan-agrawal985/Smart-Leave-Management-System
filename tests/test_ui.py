@@ -22,8 +22,8 @@ def test_public_pages_have_the_responsive_shell(client, url):
 
 
 ADMIN_PAGES = ["/dashboard", "/leave/calendar", "/leave/approvals", "/reports/",
-               "/admin/employees", "/admin/leave-types", "/admin/holidays"]
-EMPLOYEE_PAGES = ["/dashboard", "/leave/apply", "/leave/my", "/leave/calendar"]
+               "/admin/employees", "/admin/leave-types", "/admin/holidays","/profile"]
+EMPLOYEE_PAGES = ["/dashboard", "/leave/apply", "/leave/my", "/leave/calendar","/profile"]
 
 
 @pytest.mark.parametrize("url", ADMIN_PAGES)

@@ -1,0 +1,48 @@
+{% extends "base.html" %}
+{% from "_avatar.html" import avatar with context %}
+{% block title %}{{ person.name }} - LeaveOk{% endblock %}
+{% block wrap %}wide{% endblock %}
+{% block content %}
+<div class="card">
+  <div class="profile-head">
+    {{ avatar(person, 112) }}
+    <div class="profile-id">
+      <h1>{{ person.name }}</h1>
+      <p class="muted">{{ person.job_title or person.role|replace('_', ' ')|capitalize }}{% if person.department %} &middot; {{ person.department }}{% endif %}</p>
+      <p>
+        <span class="badge approved">{{ person.role|replace('_', ' ') }}</span>
+        {% if not person.is_active %}<span class="badge rejected">inactive</span>
+        {% elif person.invite_pending %}<span class="badge pending">invited</span>{% endif %}
+      </p>
+      {% if is_self %}<a class="btn-link" href="{{ url_for('profile.edit') }}">Edit my profile</a>{% endif %}
+    </div>
+  </div>
+</div>
+
+{% if person.about %}
+<div class="card" style="margin-top:20px">
+  <h2>About</h2>
+  <p class="about">{{ person.about }}</p>
+</div>
+{% endif %}
+
+<div class="card" style="margin-top:20px">
+  <h2>Work</h2>
+  <dl class="kv">
+    <dt>Location</dt><dd>{{ person.location or '-' }}</dd>
+    <dt>Reports to</dt><dd>{% if manager %}<a href="{{ url_for('profile.view', user_id=manager.id) }}">{{ manager.name }}</a>{% else %}-{% endif %}</dd>
+  </dl>
+</div>
+
+{% if show_contact %}
+<div class="card" style="margin-top:20px">
+  <h2>Contact and records</h2>
+  <dl class="kv">
+    <dt>Email</dt><dd>{{ person.email }}</dd>
+    <dt>Phone</dt><dd>{{ person.phone or '-' }}</dd>
+    <dt>Employee ID</dt><dd>{{ person.employee_code or '-' }}</dd>
+    <dt>Date of joining</dt><dd>{{ person.joined_on.strftime('%d %b %Y') if person.joined_on else '-' }}</dd>
+  </dl>
+</div>
+{% endif %}
+{% endblock %}

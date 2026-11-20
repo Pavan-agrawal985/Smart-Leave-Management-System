@@ -28,10 +28,11 @@
       if (t) document.documentElement.setAttribute('data-theme', t);
     } catch (e) {}
   </script>
-  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}?v=4">
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}?v=5">
   {% block head %}{% endblock %}
 </head>
 <body>
+  {% from "_avatar.html" import avatar with context %}
   <svg width="0" height="0" style="position:absolute" aria-hidden="true" focusable="false">
     <defs>
       <symbol id="i-menu" viewBox="0 0 24 24"><path d="M4 7h16M4 12h16M4 17h16"/></symbol>
@@ -71,8 +72,9 @@
           <a href="{{ url_for('admin.leave_types') }}" class="{{ 'active' if ep == 'admin.leave_types' else '' }}">Leave types</a>
           <a href="{{ url_for('admin.holidays') }}" class="{{ 'active' if ep == 'admin.holidays' else '' }}">Holidays</a>
         {% endif %}
-        <a href="{{ url_for('auth.logout') }}">Logout ({{ current_user.name }})</a>
-      {% else %}
+        <a href="{{ url_for('profile.edit') }}" class="nav-profile {{ 'active' if ep == 'profile.edit' else '' }}">{{ avatar(current_user, 26) }}<span>My profile</span></a>
+        <a href="{{ url_for('auth.logout') }}">Logout</a>
+        {% else %}
         <a href="{{ url_for('auth.login') }}" class="{{ 'active' if ep == 'auth.login' else '' }}">Login</a>
         <a href="{{ url_for('auth.register') }}" class="cta">Sign up</a>
       {% endif %}

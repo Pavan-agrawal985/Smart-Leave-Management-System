@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+{% from "_avatar.html" import avatar with context %}
 {% block title %}Approvals - LeaveOk{% endblock %}
 {% block wrap %}wide{% endblock %}
 {% block content %}
@@ -9,7 +10,7 @@
     <tr><th>Employee</th><th>Type</th><th>Dates</th><th>Days</th><th>Reason</th><th></th></tr>
     {% for r in requests %}
     <tr>
-      <td>{{ r.user.name }}</td>
+      <td>{{ avatar(r.user, 32) }} <a href="{{ url_for('profile.view', user_id=r.user.id) }}">{{ r.user.name }}</a></td>
       <td>{{ r.leave_type.name }}</td>
       <td>{{ r.from_date.strftime('%d %b') }} - {{ r.to_date.strftime('%d %b %Y') }}</td>
       <td>{{ r.days }}</td>

@@ -8,7 +8,7 @@ PUBLIC = ["/", "/register", "/features", "/leave-management-for-banks",
           "/leave-management-for-corporate-offices", "/faq"]
 PRIVATE = ["/login", "/forgot-password", "/health", "/verify/abc", "/invite/abc",
            "/reset-password/abc", "/owner/login", "/dashboard", "/admin/employees",
-           "/leave/apply", "/reports/"]
+           "/leave/apply", "/reports/","/profile","/people/1"]
 
 
 def grab(html, pattern):

@@ -1,0 +1,8 @@
+{% macro avatar(user, size=40) -%}
+  {%- set src = avatar_src(user, size * 2) -%}
+  {%- if src -%}
+    <img class="avatar" src="{{ src }}" width="{{ size }}" height="{{ size }}" alt="" loading="lazy">
+  {%- else -%}
+    <span class="avatar initials av-{{ size }} hue-{{ avatar_hue(user) // 30 }}" aria-hidden="true">{{ initials(user.name) }}</span>
+  {%- endif -%}
+{%- endmacro %}

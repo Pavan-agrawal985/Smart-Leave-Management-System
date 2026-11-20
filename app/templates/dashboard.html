@@ -1,11 +1,15 @@
 {% extends "base.html" %}
+{% from "_avatar.html" import avatar with context %}
 {% block title %}Dashboard - LeaveOk{% endblock %}
 {% block wrap %}wide{% endblock %}
 {% block content %}
 <div class="welcome">
-  <div>
-    <h1>Welcome, {{ current_user.name }}</h1>
-    <p class="muted">{{ org.name }} &middot; {{ org.org_type }} &middot; {{ current_user.role|replace('_', ' ') }}</p>
+  <div class="profile-head">
+    {{ avatar(current_user, 56) }}
+    <div>
+      <h1>Welcome, {{ current_user.name }}</h1>
+      <p class="muted">{{ org.name }} &middot; {{ org.org_type }} &middot; {{ current_user.role|replace('_', ' ') }}</p>
+    </div>
   </div>
   <div class="links">
     {% if current_user.role == 'org_admin' %}
@@ -22,6 +26,10 @@
 
 {% if pending_count %}
 <div class="notice"><b>{{ pending_count }}</b> request(s) waiting for your approval. <a href="{{ url_for('leave.approvals') }}">Review now</a></div>
+{% endif %}
+
+{% if completeness < 100 %}
+<div class="notice">Your profile is {{ completeness }}% complete. <a href="{{ url_for('profile.edit') }}">Complete it</a></div>
 {% endif %}
 
 {% if current_user.role == 'org_admin' %}

@@ -1,8 +1,8 @@
-import bcrypt
 import os
 import re
 from types import SimpleNamespace
 
+import bcrypt
 import pytest
 
 # SAFETY: tests always use a throwaway in-memory SQLite database,
@@ -15,7 +15,7 @@ from app import create_app  # noqa: E402
 from app.extensions import db  # noqa: E402
 from app.models import Organization, User, LeaveType, LeaveRequest, Holiday  # noqa: E402
 from app.services.org_templates import seed_leave_types  # noqa: E402
-
+from app.services.photo_service import PhotoError  # noqa: E402
 PASSWORD = "Passw0rd!x"
 OWNER_EMAIL = "owner@acme.io"
 OWNER_PASSWORD = "Owner#Pass2026x"
@@ -33,6 +33,7 @@ class SqliteTestConfig(Config):
     TESTING = True
     WTF_CSRF_ENABLED = False
     SQLALCHEMY_ENGINE_OPTIONS = {}
+    SQLALCHEMY_DATABASE_URI = "sqlite://"
 
 
 class CsrfOnConfig(SqliteTestConfig):
@@ -41,7 +42,8 @@ class CsrfOnConfig(SqliteTestConfig):
 
 def _build(config):
     application = create_app(config)
-    assert application.config["SQLALCHEMY_DATABASE_URI"].startswith("sqlite")
+    uses_sqlite = application.config["SQLALCHEMY_DATABASE_URI"].startswith("sqlite")
+    assert uses_sqlite, "Tests must use the throwaway SQLite database, never the real one."
     with application.app_context():
         db.create_all()
     return application
@@ -218,3 +220,26 @@ def owner_env(monkeypatch):
     """Tests always use the test owner login, never the real one from .env."""
     monkeypatch.setenv("OWNER_EMAIL", OWNER_EMAIL)
     monkeypatch.setenv("OWNER_PASSWORD_HASH", OWNER_HASH)
+
+@pytest.fixture(autouse=True)
+def photos(monkeypatch):
+    """Fake photo storage: nothing is uploaded to the internet during tests."""
+    state = SimpleNamespace(uploaded=[], deleted=[], fail=False)
+
+    def fake_upload(data):
+        if state.fail:
+            raise PhotoError("The photo could not be uploaded right now. Please try again.")
+        n = len(state.uploaded) + 1
+        state.uploaded.append(data)
+        return (
+            f"https://res.cloudinary.com/demo/image/upload/v1/leaveok/avatars/fake{n}.jpg",
+            f"leaveok/avatars/fake{n}",
+        )
+
+    monkeypatch.setattr("app.services.photo_service.upload_photo", fake_upload)
+    def fake_delete(public_id):
+        if public_id:                              # the real function also ignores an empty id
+            state.deleted.append(public_id)
+
+    monkeypatch.setattr("app.services.photo_service.delete_photo", fake_delete)
+    return state

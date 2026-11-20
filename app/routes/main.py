@@ -4,6 +4,7 @@ from app.extensions import db
 from app.models import Organization, User
 from app.services.leave_service import get_balances, pending_for
 from app.routes.pages import PAGES
+from app.services.profile_service import completeness
 bp = Blueprint("main", __name__)
 
 
@@ -24,6 +25,8 @@ def robots():
         "Disallow: /leave/\n"
         "Disallow: /reports/\n"
         "Disallow: /dashboard\n"
+        "Disallow: /profile\n"
+        "Disallow: /people/\n"
         f"Sitemap: {url_for('main.sitemap', _external=True)}\n"
     )
     return Response(text, mimetype="text/plain")
@@ -64,5 +67,6 @@ def dashboard():
             pending_count = len(pending_for(current_user))
 
     return render_template(
-        "dashboard.html", org=org, balances=balances, stats=stats, pending_count=pending_count
+        "dashboard.html", org=org, balances=balances, stats=stats,
+        pending_count=pending_count, completeness=completeness(current_user),
     )

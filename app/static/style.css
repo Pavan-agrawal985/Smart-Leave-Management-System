@@ -1197,3 +1197,180 @@ a.btn-link {
 .foot-links a:hover {
     text-decoration: underline;
 }
+
+textarea {
+    width: 100%;
+    padding: 11px 12px;
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    font-size: 16px;
+    background: var(--field);
+    color: var(--text);
+    font-family: inherit;
+    resize: vertical;
+}
+
+input[type="file"] {
+    padding: 9px;
+}
+
+.avatar {
+    border-radius: 50%;
+    object-fit: cover;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex: none;
+    vertical-align: middle;
+}
+
+.nav-links a.nav-profile {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.profile-head {
+    display: flex;
+    gap: 20px;
+    align-items: center;
+    flex-wrap: wrap;
+}
+
+.profile-head h1 {
+    margin: 0 0 4px;
+}
+
+.profile-id {
+    flex: 1;
+    min-width: 220px;
+}
+
+.photo-forms {
+    display: flex;
+    gap: 24px;
+    flex-wrap: wrap;
+    align-items: flex-end;
+}
+
+.photo-form {
+    flex: 1;
+    min-width: 240px;
+}
+
+.photo-form .btn-sm,
+.photo-forms .btn-sm {
+    margin-top: 12px;
+}
+
+dl.kv {
+    display: grid;
+    grid-template-columns: max-content 1fr;
+    gap: 8px 24px;
+    margin: 0;
+}
+
+dl.kv dt {
+    color: var(--muted);
+    font-size: 14px;
+}
+
+dl.kv dd {
+    margin: 0;
+}
+
+.about {
+    white-space: pre-line;
+}
+
+td .avatar {
+    margin-right: 8px;
+}
+
+@media (max-width: 640px) {
+    dl.kv {
+        grid-template-columns: 1fr;
+        gap: 2px;
+    }
+
+    dl.kv dd {
+        margin-bottom: 10px;
+    }
+}
+
+.avatar.initials {
+    color: #fff;
+    font-weight: 700;
+}
+
+.avatar.av-26 {
+    width: 26px;
+    height: 26px;
+    font-size: 11px;
+}
+
+.avatar.av-32 {
+    width: 32px;
+    height: 32px;
+    font-size: 13px;
+}
+
+.avatar.av-56 {
+    width: 56px;
+    height: 56px;
+    font-size: 22px;
+}
+
+.avatar.av-112 {
+    width: 112px;
+    height: 112px;
+    font-size: 44px;
+}
+
+.avatar.initials.hue-0 {
+    background: hsl(0 55% 42%);
+}
+
+.avatar.initials.hue-1 {
+    background: hsl(30 55% 42%);
+}
+
+.avatar.initials.hue-2 {
+    background: hsl(60 55% 36%);
+}
+
+.avatar.initials.hue-3 {
+    background: hsl(90 45% 36%);
+}
+
+.avatar.initials.hue-4 {
+    background: hsl(120 40% 34%);
+}
+
+.avatar.initials.hue-5 {
+    background: hsl(150 50% 33%);
+}
+
+.avatar.initials.hue-6 {
+    background: hsl(180 60% 32%);
+}
+
+.avatar.initials.hue-7 {
+    background: hsl(210 60% 42%);
+}
+
+.avatar.initials.hue-8 {
+    background: hsl(240 50% 50%);
+}
+
+.avatar.initials.hue-9 {
+    background: hsl(270 50% 48%);
+}
+
+.avatar.initials.hue-10 {
+    background: hsl(300 45% 42%);
+}
+
+.avatar.initials.hue-11 {
+    background: hsl(330 55% 45%);
+}

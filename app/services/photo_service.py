@@ -5,7 +5,7 @@ from urllib.parse import unquote, urlparse
 
 from PIL import Image, ImageOps, UnidentifiedImageError
 
-MAX_BYTES = 2 * 1024 * 1024
+MAX_BYTES = 4 * 1024 * 1024
 MAX_PIXELS = 25_000_000
 SIZE = 400
 ALLOWED_FORMATS = {"JPEG", "PNG", "WEBP"}
@@ -26,7 +26,7 @@ def process_image(raw):
     if not raw:
         raise PhotoError("Please choose a photo.")
     if len(raw) > MAX_BYTES:
-        raise PhotoError("The photo is too large. Please use one under 2 MB.")
+        raise PhotoError("The photo is too large. Please use one under 4 MB.")
     try:
         with Image.open(io.BytesIO(raw)) as source:
             if source.format not in ALLOWED_FORMATS:

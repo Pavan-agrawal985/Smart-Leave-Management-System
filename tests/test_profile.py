@@ -146,7 +146,7 @@ def test_removing_a_photo(login_as, factory, world, photos):
     (b"not an image at all", "fake.png", b"not a valid image"),
     (image_bytes(fmt="GIF"), "a.gif", b"JPG, PNG or WebP"),
     (image_bytes(fmt="BMP"), "a.bmp", b"JPG, PNG or WebP"),
-    (b"x" * (2 * 1024 * 1024 + 1), "big.jpg", b"too large"),
+    (b"x" * (4 * 1024 * 1024 + 1), "big.jpg", b"too large"),
 ])
 def test_bad_photos_are_refused(login_as, factory, world, photos, data, name, message):
     r = upload(login_as("emp@alpha.io"), data, name)
@@ -167,7 +167,7 @@ def test_storage_failure_is_explained(login_as, factory, world, photos):
 
 
 def test_huge_files_are_stopped_with_a_friendly_message(login_as, world):
-    big = b"x" * (3 * 1024 * 1024 + 10)
+    big = b"x" * (5 * 1024 * 1024 + 10)
     r = upload(login_as("emp@alpha.io"), big, "huge.jpg")
     assert b"too large" in r.data
 
@@ -193,6 +193,10 @@ def test_photos_with_too_many_pixels_are_refused():
     with pytest.raises(PhotoError, match="too many pixels"):
         process_image(image_bytes((6000, 5000), "white", mode="L"))
 
+def test_photo_form_shrinks_big_photos_in_the_browser(login_as, world):
+    page = login_as("emp@alpha.io").get("/profile").data
+    assert b'id="photo-form"' in page and b"up to 10 MB" in page
+    assert b"createImageBitmap" in page and b"toBlob" in page
 
 # ------------------------------------------------------------------- avatars
 

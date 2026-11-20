@@ -1374,3 +1374,6 @@ td .avatar {
 .avatar.initials.hue-11 {
     background: hsl(330 55% 45%);
 }
+
+.photo-note.bad { color: var(--no-tx); }
+.photo-note { min-height: 1.4em; margin: 8px 0 0; }

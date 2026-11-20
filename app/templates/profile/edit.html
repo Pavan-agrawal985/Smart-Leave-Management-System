@@ -17,13 +17,14 @@
 
 <div class="card" style="margin-top:20px">
   <h2>Profile photo</h2>
-  <p class="muted">JPG, PNG or WebP, up to 2 MB. Your photo is stored in cloud image storage, not on our server, and is shown to people in your organization.</p>
+  <p class="muted">Choose a JPG, PNG or WebP photo up to 10 MB. Your browser shrinks it before upload. It is stored in cloud image storage, not on our server, and shown to people in your organization.</p>
   <div class="photo-forms">
-    <form method="POST" action="{{ url_for('profile.set_photo') }}" enctype="multipart/form-data" class="photo-form">
+    <form id="photo-form" method="POST" action="{{ url_for('profile.set_photo') }}" enctype="multipart/form-data" class="photo-form">
       <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
       <label for="photo">Choose a photo</label>
       <input id="photo" type="file" name="photo" accept="image/jpeg,image/png,image/webp" required>
-      <button type="submit" class="btn-sm ok">Upload photo</button>
+      <p id="photo-note" class="muted photo-note" aria-live="polite"></p>
+      <button id="photo-submit" type="submit" class="btn-sm ok">Upload photo</button>
     </form>
     {% if current_user.photo_url %}
     <form method="POST" action="{{ url_for('profile.remove_photo') }}"
@@ -34,6 +35,71 @@
     {% endif %}
   </div>
 </div>
+
+<script>
+  (function () {
+    var input = document.getElementById('photo');
+    var note = document.getElementById('photo-note');
+    var button = document.getElementById('photo-submit');
+    if (!input || !window.DataTransfer) return;
+    var MAX_ORIGINAL = 10 * 1024 * 1024;
+    var MAX_SIDE = 1000;
+
+    function say(text, bad) { note.textContent = text; note.className = 'muted photo-note' + (bad ? ' bad' : ''); }
+    function busy(on) { button.disabled = on; }
+
+    function viaImage(file) {
+      return new Promise(function (resolve, reject) {
+        var url = URL.createObjectURL(file), img = new Image();
+        img.onload = function () { URL.revokeObjectURL(url); resolve(img); };
+        img.onerror = function () { URL.revokeObjectURL(url); reject(new Error('bad image')); };
+        img.src = url;
+      });
+    }
+    function loadImage(file) {
+      if (window.createImageBitmap) {
+        return createImageBitmap(file, { imageOrientation: 'from-image' }).catch(function () { return viaImage(file); });
+      }
+      return viaImage(file);
+    }
+    function toBlob(canvas, quality) {
+      return new Promise(function (resolve) { canvas.toBlob(resolve, 'image/jpeg', quality); });
+    }
+
+    input.addEventListener('change', function () {
+      var file = input.files && input.files[0];
+      if (!file) { say(''); return; }
+      if (file.size > MAX_ORIGINAL) { input.value = ''; say('This photo is over 10 MB. Please choose a smaller one.', true); return; }
+      if (!/^image\/(jpeg|png|webp)$/.test(file.type)) { input.value = ''; say('Please choose a JPG, PNG or WebP photo.', true); return; }
+
+      say('Preparing your photo...');
+      busy(true);
+      loadImage(file).then(function (bitmap) {
+        var scale = Math.min(1, MAX_SIDE / Math.max(bitmap.width, bitmap.height));
+        var canvas = document.createElement('canvas');
+        canvas.width = Math.round(bitmap.width * scale);
+        canvas.height = Math.round(bitmap.height * scale);
+        var ctx = canvas.getContext('2d');
+        ctx.fillStyle = '#ffffff';
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        ctx.drawImage(bitmap, 0, 0, canvas.width, canvas.height);
+        return toBlob(canvas, 0.85).then(function (blob) {
+          return blob && blob.size > 1500000 ? toBlob(canvas, 0.7) : blob;
+        });
+      }).then(function (blob) {
+        if (!blob) throw new Error('no result');
+        var small = new File([blob], 'photo.jpg', { type: 'image/jpeg' });
+        var transfer = new DataTransfer();
+        transfer.items.add(small);
+        input.files = transfer.files;
+        say('Ready to upload (' + Math.max(1, Math.round(small.size / 1024)) + ' KB after shrinking).');
+      }).catch(function () {
+        if (file.size > 4 * 1024 * 1024) { input.value = ''; say('This photo could not be prepared. Please choose one under 4 MB.', true); }
+        else { say('Ready to upload.'); }
+      }).then(function () { busy(false); });
+    });
+  })();
+</script>
 
 <div class="card" style="margin-top:20px">
   <h2>Your details</h2>

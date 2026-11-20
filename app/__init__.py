@@ -53,7 +53,7 @@ def create_app(config_class=Config):
 
     @app.errorhandler(RequestEntityTooLarge)
     def too_large(_error):
-        flash("That file is too large. Please choose a photo under 2 MB.")
+        flash("That file is too large. Please choose smaller photo")
         return redirect(url_for("profile.edit"))
 
     @app.after_request
